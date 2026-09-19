@@ -33,10 +33,15 @@ const MIME_TYPES = {
     '.js': 'text/javascript; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
     '.png': 'image/png',
+    '.webp': 'image/webp',
     '.mp4': 'video/mp4',
     '.json': 'application/json',
     '.ico': 'image/x-icon',
 };
+
+// Long-lived cache for assets that only change when we redeploy — the
+// browser skips re-downloading these on repeat visits entirely.
+const CACHEABLE_EXTENSIONS = new Set(['.png', '.webp', '.mp4', '.css', '.js']);
 
 function readBody(req) {
     return new Promise((resolve, reject) => {
@@ -96,7 +101,11 @@ function serveStatic(req, res, pathname) {
             return;
         }
         const ext = path.extname(filePath);
-        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+        const headers = { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' };
+        if (CACHEABLE_EXTENSIONS.has(ext)) {
+            headers['Cache-Control'] = 'public, max-age=86400';
+        }
+        res.writeHead(200, headers);
         res.end(data);
     });
 }
