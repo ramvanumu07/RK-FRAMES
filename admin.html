@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Wedding Gift Manager</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <!-- LOGIN VIEW -->
+    <div id="login-view" class="view">
+        <div class="login-card">
+            <h1>Admin Login</h1>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="Email" required autocomplete="username">
+                <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
+                <button type="submit">Log In</button>
+            </form>
+            <p class="error" id="login-error"></p>
+        </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboard-view" class="view" hidden>
+        <header class="topbar">
+            <h1>Wedding Gift Admin</h1>
+            <div class="topbar-right">
+                <span id="current-user"></span>
+                <button id="logout-btn" class="btn-secondary">Log Out</button>
+            </div>
+        </header>
+
+        <main>
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Gift Codes</h2>
+                    <button id="new-gift-btn" class="btn-primary">+ New Gift Code</button>
+                </div>
+                <p class="error" id="gifts-error"></p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Access Code</th>
+                            <th>Status</th>
+                            <th>Groom</th>
+                            <th>Bride</th>
+                            <th>Wedding Date</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gifts-table-body"></tbody>
+                </table>
+            </section>
+
+            <section class="panel" id="users-panel" hidden>
+                <div class="panel-header">
+                    <h2>Admin / Staff Users</h2>
+                    <button id="new-user-btn" class="btn-primary">+ New User</button>
+                </div>
+                <p class="error" id="users-error"></p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <!-- EDIT GIFT MODAL -->
+    <div id="edit-modal" class="modal-overlay" hidden>
+        <div class="modal">
+            <h3>Edit Gift</h3>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <label>Groom's Name<input type="text" id="edit-groom-name" required></label>
+                <label>Bride's Name<input type="text" id="edit-bride-name" required></label>
+                <label>Wedding Date<input type="date" id="edit-wedding-date" required></label>
+                <p class="error" id="edit-error"></p>
+                <div class="modal-actions">
+                    <button type="button" id="edit-cancel-btn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW USER MODAL -->
+    <div id="new-user-modal" class="modal-overlay" hidden>
+        <div class="modal">
+            <h3>New Admin/Staff User</h3>
+            <form id="new-user-form">
+                <label>Email<input type="email" id="new-user-email" required></label>
+                <label>Password<input type="password" id="new-user-password" required></label>
+                <label>Role
+                    <select id="new-user-role">
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </label>
+                <p class="error" id="new-user-error"></p>
+                <div class="modal-actions">
+                    <button type="button" id="new-user-cancel-btn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

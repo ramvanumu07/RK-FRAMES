@@ -1,0 +1,258 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+    background-color: #f4f2ee;
+    color: #2c2c2c;
+}
+
+.view {
+    min-height: 100vh;
+}
+
+/* ---------- Login ---------- */
+
+#login-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#login-view[hidden],
+#dashboard-view[hidden] {
+    display: none;
+}
+
+.login-card {
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    width: 100%;
+    max-width: 340px;
+}
+
+.login-card h1 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.login-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ---------- Shared form controls ---------- */
+
+input,
+select {
+    font-size: 15px;
+    padding: 10px 12px;
+    border: 1px solid #d8d3c9;
+    border-radius: 6px;
+    outline: none;
+}
+
+input:focus,
+select:focus {
+    border-color: #a6873f;
+}
+
+button {
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #a6873f;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #8c7132;
+}
+
+.btn-secondary {
+    background-color: #e5e0d5;
+    color: #2c2c2c;
+}
+
+.btn-secondary:hover {
+    background-color: #d8d3c4;
+}
+
+.error {
+    color: #b3261e;
+    font-size: 14px;
+    margin-top: 8px;
+    min-height: 18px;
+}
+
+/* ---------- Dashboard ---------- */
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    padding: 16px 28px;
+    border-bottom: 1px solid #e5e0d5;
+}
+
+.topbar h1 {
+    font-size: 18px;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+    color: #6b6b6b;
+}
+
+main {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.panel {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.panel-header h2 {
+    font-size: 16px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+    color: #6b6b6b;
+    font-weight: 600;
+}
+
+.access-code-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-filled {
+    background-color: #e2f2e5;
+    color: #2b7a3b;
+}
+
+.status-empty {
+    background-color: #f2ece2;
+    color: #a6873f;
+}
+
+.row-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.row-actions button {
+    font-size: 13px;
+    padding: 6px 10px;
+}
+
+.btn-danger {
+    background-color: #f4d9d7;
+    color: #a3352c;
+}
+
+.btn-danger:hover {
+    background-color: #edc4c1;
+}
+
+/* ---------- Modal ---------- */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+}
+
+.modal-overlay[hidden] {
+    display: none;
+}
+
+.modal {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+}
+
+.modal h3 {
+    margin-bottom: 16px;
+}
+
+.modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal label {
+    font-size: 13px;
+    color: #6b6b6b;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}

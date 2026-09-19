@@ -1,0 +1,725 @@
+/**
+ * Premium Wedding Gift Experience Styles
+ * Mobile-first 9:16 design with elegant, minimal aesthetic
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Garamond', 'Georgia', serif;
+    background-color: #ffffff;
+    color: #2c2c2c;
+    /* Force uniform-height, equal-width digits everywhere on the site —
+       without this, some serif fonts render "old-style" numerals whose
+       heights bounce above/below the letter baseline instead of sitting
+       in a steady line. */
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ============================================================
+   SCREEN LAYOUT
+   ============================================================ */
+
+.screen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+#screen-1 {
+    opacity: 1;
+    z-index: 100;
+    transition: opacity 1.2s ease-in-out;
+}
+
+#screen-1.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#screen-2 {
+    opacity: 0;
+    z-index: 50;
+    transition: opacity 1.2s ease-in-out;
+    pointer-events: none;
+}
+
+#screen-2.fade-in {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Access gate + first-time setup form sit above Screen 1 and hide
+   themselves (rather than the other way around) once resolved, so
+   Screen 1's video can be started fresh at exactly the right moment. */
+#screen-access,
+#screen-fill {
+    z-index: 300;
+    opacity: 1;
+    transition: opacity 0.6s ease-in-out;
+}
+
+#screen-fill {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#screen-fill.fade-in {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#screen-access.fade-out,
+#screen-fill.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.screen-access,
+.screen-fill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(circle at 50% 30%, #fffdf7 0%, #fcf7eb 55%, #f5ecd8 100%);
+}
+
+/* Screen-access: gate-bg.png already contains the heading, subtitle and
+   dividers baked in (same "template + data overlay" idea as Screen 2),
+   so the canvas just needs to size itself to the image without ever
+   cropping it, then position the form in the blank band below the
+   text. Reuses the exact same responsive pattern proven on Screen 2:
+   an explicit content-independent width formula + container queries so
+   the form scales off the real canvas width, not the raw viewport. */
+.gate-canvas {
+    position: relative;
+    aspect-ratio: 851 / 1849;
+    width: min(100vw, calc(100vh * 851 / 1849));
+    width: min(100vw, calc(100dvh * 851 / 1849));
+    container-type: inline-size;
+    container-name: gate;
+}
+
+.gate-bg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.gate-content {
+    position: absolute;
+    top: 53%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 82%;
+    max-width: 320px;
+    text-align: center;
+}
+
+/* Screen-fill: no matching artwork for this heading's wording, so it
+   keeps its own plain premium card instead of gate-bg.png. Still a
+   container so the shared .gate-form/.gate-input cqw-based sizing
+   below resolves against ITS width instead of failing silently. */
+.gate-canvas-plain {
+    width: 100%;
+    max-width: 380px;
+    container-type: inline-size;
+    container-name: gate;
+    padding: 44px 36px;
+    text-align: center;
+    background-color: #fffefb;
+    border: 1px solid #e5d6ad;
+    border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(166, 135, 63, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Small gold flourish — a line with a diamond at its center, echoing
+   the ornament baked into the Screen 2 artwork, so this gate feels
+   like part of the same premium invitation rather than a plain form. */
+.gate-ornament {
+    position: relative;
+    width: 90px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #a6873f, transparent);
+    margin: 0 auto 22px;
+}
+
+.gate-ornament::before {
+    content: '♦';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+    font-size: 11px;
+    color: #a6873f;
+    background-color: #fffefb;
+    padding: 0 10px;
+}
+
+.gate-title {
+    font-family: 'Playfair Display', 'Garamond', serif;
+    font-size: clamp(26px, 6.5vw, 34px);
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #a6873f;
+    margin-bottom: 10px;
+}
+
+.gate-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: clamp(14px, 3.5vw, 17px);
+    color: #8b7355;
+    line-height: 1.5;
+    margin-bottom: 32px;
+}
+
+.gate-form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 4cqw, 16px);
+}
+
+.gate-input {
+    font-family: 'Cormorant Garamond', serif;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: clamp(13px, 4.2cqw, 18px);
+    padding: clamp(9px, 3cqw, 13px) 14px;
+    border: none;
+    border-bottom: 2px solid #d8c9a3;
+    background-color: transparent;
+    color: #2c2c2c;
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s ease;
+}
+
+.gate-input::placeholder {
+    color: #b3a074;
+    letter-spacing: 1px;
+}
+
+.gate-input:focus {
+    border-bottom-color: #a6873f;
+}
+
+/* The gift/creation codes read as a distinct, deliberate "code" —
+   bold, evenly-spaced, lining figures so digits never look like they
+   sit on a different baseline than the surrounding letters. */
+.gate-input-code {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 700;
+    font-size: clamp(15px, 5cqw, 22px);
+    letter-spacing: clamp(2px, 1cqw, 4px);
+    text-transform: uppercase;
+    color: #a6873f;
+}
+
+.gate-submit {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(12px, 3.6cqw, 16px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 14px 16px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #c2a15c, #a6873f);
+    color: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(166, 135, 63, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gate-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(166, 135, 63, 0.42);
+}
+
+.gate-submit:disabled {
+    background: #cbbb8e;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.gate-error {
+    margin-top: 18px;
+    min-height: 20px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    color: #b3261e;
+}
+
+
+/* ============================================================
+   SCREEN 1: THE WELCOME
+   One 9:16 canvas. The video fills it edge-to-edge; every piece of
+   personalization is absolutely positioned on top of it at fixed
+   percentage coordinates of this same canvas.
+   ============================================================ */
+
+.screen-welcome {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+}
+
+/* The one and only canvas. On mobile it fills the full viewport so the
+   video always reaches every edge — object-fit:cover then crops only the
+   left/right sides on typical tall phones (video height still maps 1:1
+   to the canvas, so every text top:% position below stays accurate). */
+.welcome-canvas {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+/* Video occupies the entire canvas, 0% to 100% */
+.welcome-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    background-color: #ffffff;
+}
+
+/* Couple Names — 72% to 77% of the canvas.
+   flex-wrap:wrap is a safety net: names stay on one line whenever they
+   fit, and only wrap to a second line for unusually long names instead
+   of being clipped/invisible at the canvas edge. */
+.couple-names-row {
+    position: absolute;
+    top: 74.5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 92%;
+    max-width: 520px;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    row-gap: 4px;
+    column-gap: clamp(6px, 2vw, 12px);
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeIn 1.2s ease-out 0.6s forwards;
+}
+
+.name-groom,
+.name-bride {
+    font-family: 'Garamond', 'Georgia', 'Palatino', serif;
+    font-size: clamp(11px, 4.6vw, 24px);
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: #a6873f;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex: 0 1 auto;
+}
+
+.name-ampersand {
+    font-family: 'EB Garamond', 'Garamond', 'Georgia', serif;
+    font-style: italic;
+    font-size: clamp(12px, 3.2vw, 18px);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    color: #a6873f;
+    flex: 0 0 auto;
+}
+
+/* Ornamental Divider — 77% to 80% of the canvas */
+.ornament-divider {
+    position: absolute;
+    top: 78.5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 1px;
+    background: linear-gradient(to right,
+            transparent,
+            #a6873f 20%,
+            #a6873f 80%,
+            transparent);
+    opacity: 0;
+    animation: fadeIn 1.2s ease-out 1s forwards;
+}
+
+/* Together Since Label — 81% to 85% of the canvas */
+.together-label {
+    position: absolute;
+    top: 83%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 92%;
+    text-align: center;
+    font-family: 'Garamond', 'Georgia', 'Palatino', serif;
+    font-size: clamp(11px, 2.6vw, 13px);
+    letter-spacing: 3px;
+    color: #9d8860;
+    text-transform: uppercase;
+    font-weight: 400;
+    opacity: 0;
+    animation: fadeIn 1.2s ease-out 1s forwards;
+}
+
+/* Wedding Date — 85% to 89% of the canvas */
+.wedding-date {
+    position: absolute;
+    top: 87%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 92%;
+    text-align: center;
+    font-family: 'Garamond', 'Georgia', 'Palatino', serif;
+    font-size: clamp(15px, 3.4vw, 18px);
+    letter-spacing: 1px;
+    color: #8b7355;
+    font-weight: 400;
+    font-variant-numeric: lining-nums tabular-nums;
+    opacity: 0;
+    animation: fadeIn 1.2s ease-out 1.4s forwards;
+}
+
+/* ============================================================
+   SCREEN 2: OUR JOURNEY SO FAR
+   screen2.png is the fixed artwork — every label, phrase, heading and
+   the closing message is already baked into it. Only the couple's DATA
+   (names, date, countdown, six numbers) is overlaid here, so the exact
+   same template + CSS is reusable for any couple — the data now comes
+   from the database (via the access code), not a hardcoded config file.
+   Positions are percentages of the canvas, verified against the
+   template with an objective pixel scan (see /memories notes) rather
+   than eyeballed, so they hold up across screen sizes.
+   ============================================================ */
+
+.screen-journey {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    background-color: #fcf7eb;
+}
+
+/* The canvas is sized to exactly match the image's own letterboxed
+   box (never cropped) so every percentage-based overlay below always
+   lines up with the actual visible artwork, regardless of the
+   device's aspect ratio. container-type turns it into a query
+   container so descendant font sizes below can scale off ITS width
+   (cqw) instead of the raw viewport width. */
+.journey-canvas {
+    position: relative;
+    aspect-ratio: 850 / 1850;
+    width: min(100vw, calc(100vh * 850 / 1850));
+    width: min(100vw, calc(100dvh * 850 / 1850));
+    container-type: inline-size;
+    container-name: journey;
+}
+
+.journey-bg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* Shared helpers: every data overlay is centered and anchored by top % */
+.journey-canvas>*:not(.journey-bg) {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    opacity: 0;
+    animation: fadeIn 1s ease-out 0.3s forwards;
+}
+
+/* ---------- HEADER: names + wedding date ----------
+   "TOGETHER SINCE" and its dividers are baked into the artwork; only
+   the blank bands above and below that label are ours to fill. */
+
+.journey-names {
+    top: 5.3%;
+    width: 98%;
+    max-width: 580px;
+    white-space: normal;
+    font-family: 'Playfair Display', 'Garamond', serif;
+    font-size: clamp(11.5px, 4cqw, 17px);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #a6873f;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 4px;
+    column-gap: clamp(6px, 2cqw, 12px);
+}
+
+.journey-names span {
+    white-space: nowrap;
+}
+
+.journey-amp {
+    font-style: normal;
+    font-size: 0.85em;
+}
+
+.journey-wedding-date {
+    top: 9.8%;
+    width: 90%;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(9px, 2.9cqw, 11px);
+    font-weight: 700;
+    font-style: normal;
+    line-height: 1;
+    text-transform: uppercase;
+    color: #3a211c;
+}
+
+.journey-wedding-date .date-month {
+    letter-spacing: 2.5px;
+}
+
+.journey-wedding-date .date-day-year {
+    letter-spacing: 0.4px;
+    font-variant-numeric: lining-nums;
+}
+
+/* ---------- ANNIVERSARY COUNTDOWN (inside the circle) ----------
+   Circle top ~15.4%; "DAYS" / dividers / "HOURS MINUTES SECONDS" are
+   baked in. Open bands: 16-27% (label+number) and the dot separators
+   row at ~33% (the live HH:MM:SS figures). */
+
+.anniversary-label {
+    top: 17.3%;
+    width: 54%;
+    white-space: normal;
+    font-family: 'Playfair Display', 'Garamond', serif;
+    font-size: clamp(11px, 3.2cqw, 15px);
+    font-weight: 800;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    color: #3a211c;
+    line-height: 1.35;
+}
+
+.anniversary-number {
+    top: 22.1%;
+    width: 48%;
+    font-family: 'Cormorant Garamond', 'Garamond', serif;
+    font-weight: 700;
+    font-variant-numeric: lining-nums;
+    font-size: clamp(34px, 12.5cqw, 56px);
+    color: #a6873f;
+    line-height: 1;
+}
+
+.anniversary-hours,
+.anniversary-minutes,
+.anniversary-seconds {
+    top: 32.2%;
+    width: 12%;
+    font-family: 'Cormorant Garamond', 'Garamond', serif;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: clamp(13px, 3.8cqw, 17px);
+    color: #3a211c;
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+.anniversary-hours.anniversary-hours {
+    left: 37%;
+}
+
+.anniversary-minutes.anniversary-minutes {
+    left: 50%;
+}
+
+.anniversary-seconds.anniversary-seconds {
+    left: 63.5%;
+}
+
+/* ---------- SIX JOURNEY DISCOVERIES ----------
+   Columns centered at 18.5% / 50% / 81.5%, matching the template icons.
+   Icons, labels and italic captions are all baked in; only the number
+   for each cell is ours to place, right between the icon and its label. */
+
+.stat-number {
+    width: 30%;
+    font-family: 'Cormorant Garamond', 'Garamond', serif;
+    font-weight: 600;
+    font-variant-numeric: lining-nums;
+    font-size: clamp(13px, 3.8cqw, 17px);
+    color: #a6873f;
+    line-height: 1.1;
+}
+
+.stat-heartbeats {
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.stat-days.stat-number,
+.stat-nights.stat-number {
+    left: 18.5%;
+}
+
+.stat-heartbeats.stat-number,
+.stat-full-moons.stat-number {
+    left: 50%;
+}
+
+.stat-sunrises.stat-number,
+.stat-seasons.stat-number {
+    left: 81.5%;
+}
+
+.stat-days,
+.stat-heartbeats,
+.stat-sunrises {
+    top: 57.8%;
+}
+
+.stat-nights,
+.stat-full-moons,
+.stat-seasons {
+    top: 73.3%;
+}
+
+/* No media-query overrides needed for Screen 2 — the shrink-wrap
+   contain layout above already works correctly at every viewport size
+   and orientation without ever cropping the artwork. */
+
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+/* Tablet / desktop: keep the narrow vertical 9:16 composition instead of
+   stretching, and go back to a true fixed 9:16 box (contain — no crop
+   needed since the box's own aspect ratio already matches the video). */
+@media (min-width: 600px) {
+    .welcome-canvas {
+        width: auto;
+        height: 100%;
+        aspect-ratio: 9 / 16;
+    }
+
+    .welcome-video {
+        object-fit: contain;
+    }
+}
+
+/* Mobile landscape is rare and would crop too aggressively top/bottom
+   with cover, so fall back to the safe letterboxed 9:16 box there too */
+@media (max-width: 599px) and (orientation: landscape) {
+    .welcome-canvas {
+        width: auto;
+        height: 100%;
+        aspect-ratio: 9 / 16;
+    }
+
+    .welcome-video {
+        object-fit: contain;
+    }
+}
+
+/* Prevent scrolling on Screen 1 */
+body.screen-1-active {
+    overflow: hidden;
+}
+
+body.screen-2-active {
+    overflow: auto;
+}
+
+/* Smooth scrolling behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ============================================================
+   TYPOGRAPHY & SPACING CONSTANTS
+   ============================================================ */
+
+/* Color Palette */
+:root {
+    --color-white: #ffffff;
+    --color-ivory: #fffbf5;
+    --color-text-primary: #2c2c2c;
+    --color-text-secondary: #666666;
+    --color-accent-gold: #b8860b;
+    --color-accent-muted: #8b7355;
+
+    --font-size-names: 28px;
+    --font-size-label: 11px;
+    --font-size-date: 18px;
+    --font-size-letter: 16px;
+
+    --letter-spacing-names: 3px;
+    --letter-spacing-label: 4px;
+    --letter-spacing-date: 2px;
+
+    --animation-duration-fade: 1.2s;
+    --animation-delay-names: 0.6s;
+    --animation-delay-label: 1s;
+    --animation-delay-date: 1.4s;
+}
+
+/* Remove default scrollbar styling for cleaner look */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d4a574;
+    border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #b8860b;
+}

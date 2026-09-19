@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A premium digital wedding gift">
+    <title>A Gift for You</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;0,900;1,500;1,600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- SCREEN 0a: GIFT CODE GATE -->
+    <!-- gate-bg.png already contains the heading, subtitle and ornamental
+         dividers — only the form is overlaid, in the blank band between
+         them, same "template + data overlay" pattern as Screen 2. -->
+    <div id="screen-access" class="screen screen-access">
+        <div class="gate-canvas">
+            <img class="gate-bg" src="gate-bg.png" alt="" aria-hidden="true">
+            <div class="gate-content">
+                <form id="access-form" class="gate-form" autocomplete="off">
+                    <input type="text" id="access-code-input" class="gate-input gate-input-code" placeholder="GIFT CODE" required>
+                    <button type="submit" class="gate-submit">Open My Gift</button>
+                </form>
+                <p class="gate-error" id="access-error"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 0b: FIRST-TIME SETUP (only shown for a not-yet-personalized code) -->
+    <div id="screen-fill" class="screen screen-fill">
+        <div class="gate-canvas-plain">
+            <div class="gate-ornament" aria-hidden="true"></div>
+            <h1 class="gate-title">Set Up Your Gift</h1>
+            <p class="gate-subtitle">Enter the couple's details to personalize this gift</p>
+            <form id="fill-form" class="gate-form" autocomplete="off">
+                <input type="text" id="fill-groom-name" class="gate-input" placeholder="Groom's Name" required>
+                <input type="text" id="fill-bride-name" class="gate-input" placeholder="Bride's Name" required>
+                <input type="date" id="fill-wedding-date" class="gate-input" required>
+                <input type="text" id="fill-creation-code" class="gate-input gate-input-code" placeholder="CREATION CODE" required>
+                <button type="submit" class="gate-submit">Save &amp; Continue</button>
+            </form>
+            <p class="gate-error" id="fill-error"></p>
+        </div>
+    </div>
+
+    <!-- SCREEN 1: THE WELCOME -->
+    <div id="screen-1" class="screen screen-welcome">
+        <!-- One 9:16 canvas. Video fills it edge-to-edge; every piece of
+             personalization is absolutely positioned on top of it at fixed
+             percentage coordinates. Nothing here participates in document
+             flow after the video — it is all painted on the same canvas. -->
+        <div class="welcome-canvas">
+            <video id="welcome-video" class="welcome-video" muted playsinline>
+                <source src="Krishna_and_Radha_meeting_1080p_20260912151343.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+
+            <div class="couple-names-row">
+                <span class="name-groom" id="groom-name">RAMAKRISHNAN</span>
+                <span class="name-ampersand">&</span>
+                <span class="name-bride" id="bride-name">KALAMUTHU</span>
+            </div>
+
+            <div class="ornament-divider"></div>
+
+            <div class="together-label">TOGETHER SINCE</div>
+
+            <div class="wedding-date" id="wedding-date">12 SEPTEMBER 2018</div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: OUR JOURNEY SO FAR -->
+    <!-- screen2.png is the fixed artwork — all labels, phrases, headings
+         and the closing message are already baked into it. Only the
+         couple-specific DATA is overlaid here, so this same template can be
+         reused for any couple: the data now comes from the database (via
+         the access code), not a hardcoded config file. -->
+    <div id="screen-2" class="screen screen-journey">
+        <div class="journey-canvas">
+            <img class="journey-bg" src="screen2.png" alt="" aria-hidden="true">
+
+            <div class="journey-names" id="journey-names">
+                <span id="journey-groom-name">Ramakrishnan</span>
+                <span class="journey-amp">&amp;</span>
+                <span id="journey-bride-name">Kalamuthu</span>
+            </div>
+            <div class="journey-wedding-date" id="journey-wedding-date">
+                <span class="date-month" id="journey-date-month">September</span>
+                <span class="date-day-year" id="journey-date-day-year">12, 2018</span>
+            </div>
+
+            <div class="anniversary-label">Next<br>Anniversary In</div>
+            <div class="anniversary-number" id="anniversary-days">364</div>
+
+            <div class="anniversary-hours" id="anniversary-hours">12</div>
+            <div class="anniversary-minutes" id="anniversary-minutes">24</div>
+            <div class="anniversary-seconds" id="anniversary-seconds">18</div>
+
+            <div class="stat-number stat-days" id="stat-days">2,922</div>
+            <div class="stat-number stat-heartbeats" id="stat-heartbeats">302,952,960</div>
+            <div class="stat-number stat-sunrises" id="stat-sunrises">2,922</div>
+            <div class="stat-number stat-nights" id="stat-nights">2,922</div>
+            <div class="stat-number stat-full-moons" id="stat-full-moons">98</div>
+            <div class="stat-number stat-seasons" id="stat-seasons">32</div>
+        </div>
+    </div>
+
+    <script src="utils.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
