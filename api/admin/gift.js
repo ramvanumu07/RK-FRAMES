@@ -5,23 +5,23 @@
  */
 const { sql } = require('../_lib/db');
 const { requireSession } = require('../_lib/auth');
+const { giftData } = require('../_lib/gift-data');
 
 module.exports = async (req, res) => {
     const session = requireSession(req, res);
     if (!session) return;
 
     const id = Number(req.query?.id);
-    if (!id) {
+    if (!Number.isSafeInteger(id) || id < 1) {
         res.status(400).json({ error: 'Missing or invalid id' });
         return;
     }
 
     if (req.method === 'PUT') {
-        const { groomName, brideName, weddingDate } = req.body || {};
-        if (!groomName || !brideName || !weddingDate) {
-            res.status(400).json({ error: 'Missing required fields' });
-            return;
-        }
+        let details;
+        try { details = giftData(req.body); }
+        catch (error) { return res.status(400).json({ error: error.message }); }
+        const { groomName, brideName, weddingDate } = details;
         const rows = await sql`
             UPDATE gifts
             SET groom_name = ${groomName},
@@ -40,7 +40,9 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'DELETE') {
-        await sql`DELETE FROM gifts WHERE id = ${id}`;
+        if (session.role !== 'admin') return res.status(403).json({ error: 'Only admins can delete gifts' });
+        const rows = await sql`DELETE FROM gifts WHERE id = ${id} AND batch_id IS NULL RETURNING id`;
+        if (!rows.length) return res.status(409).json({ error: 'Printed batch records cannot be deleted' });
         res.status(200).json({ success: true });
         return;
     }

@@ -18,9 +18,10 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-        const { email, password, role } = req.body || {};
-        if (!email || !password || !['admin', 'staff'].includes(role)) {
-            res.status(400).json({ error: 'email, password and a valid role are required' });
+        const email = String(req.body?.email || '').trim().toLowerCase();
+        const { password, role } = req.body || {};
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || typeof password !== 'string' || password.length < 10 || password.length > 72 || !['admin', 'staff'].includes(role)) {
+            res.status(400).json({ error: 'A valid email, password of 10-72 characters, and role are required' });
             return;
         }
         const passwordHash = await bcrypt.hash(password, 10);

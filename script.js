@@ -169,51 +169,85 @@ class AccessGate {
     constructor() {
         this.screenAccess = document.getElementById('screen-access');
         this.screenFill = document.getElementById('screen-fill');
-        this.accessForm = document.getElementById('access-form');
-        this.accessInput = document.getElementById('access-code-input');
         this.accessError = document.getElementById('access-error');
         this.fillForm = document.getElementById('fill-form');
         this.fillError = document.getElementById('fill-error');
-        this.pendingCode = null;
+        const code = location.pathname.match(/^\/g\/([A-Z0-9]{4,64})$/i)?.[1] || new URLSearchParams(location.search).get('code');
+        this.pendingCode = (code || '').trim().toUpperCase();
+        this.pendingFilled = false;
+        this.staffForm = document.getElementById('staff-login-form');
+        this.managing = new URLSearchParams(location.search).get('manage') === '1';
 
-        this.accessForm.addEventListener('submit', (e) => this.handleAccessSubmit(e));
         this.fillForm.addEventListener('submit', (e) => this.handleFillSubmit(e));
+        this.staffForm.addEventListener('submit', (event) => this.handleStaffLogin(event));
+        this.resolveGift();
     }
 
     setBusy(form, busy) {
         form.querySelector('button[type="submit"]').disabled = busy;
     }
 
-    async handleAccessSubmit(e) {
-        e.preventDefault();
-        this.accessError.textContent = '';
-        const code = this.accessInput.value.trim().toUpperCase();
-        if (!code) return;
-
-        this.setBusy(this.accessForm, true);
+    async resolveGift() {
+        const code = this.pendingCode;
+        if (!/^[A-Z0-9]{4,64}$/.test(code)) {
+            this.accessError.textContent = 'No gift selected.';
+            this.screenAccess.style.display = 'flex';
+            return;
+        }
+        this.accessError.textContent = 'Opening your gift...';
         try {
             const res = await fetch(`/api/gift?code=${encodeURIComponent(code)}`);
             const data = await res.json();
 
             if (!res.ok || !data.found) {
-                this.accessError.textContent = 'That access code was not found. Please check and try again.';
+                this.accessError.textContent = 'This gift could not be found.';
+                this.screenAccess.style.display = 'flex';
                 return;
             }
 
             this.pendingCode = code;
+            this.pendingFilled = data.filled;
 
-            if (data.filled) {
+            if (data.filled && !this.managing) {
+                this.screenAccess.style.display = 'none';
                 this.screenAccess.classList.add('fade-out');
                 new WeddingGiftExperience(data);
-            } else {
+            } else if (data.canManage) {
+                document.getElementById('fill-groom-name').value = data.groomName || '';
+                document.getElementById('fill-bride-name').value = data.brideName || '';
+                document.getElementById('fill-wedding-date').value = data.weddingDate || '';
                 this.screenAccess.classList.add('fade-out');
                 this.screenFill.classList.add('fade-in');
+            } else {
+                this.accessError.textContent = this.managing ? 'Shop owner sign-in is required to edit this gift.' : 'This gift is being prepared.';
+                this.screenAccess.style.display = 'flex';
+                this.staffForm.style.display = 'flex';
             }
         } catch (err) {
             console.error(err);
             this.accessError.textContent = 'Something went wrong. Please try again.';
+            this.screenAccess.style.display = 'flex';
+        }
+    }
+
+    async handleStaffLogin(event) {
+        event.preventDefault();
+        this.setBusy(this.staffForm, true);
+        this.accessError.textContent = '';
+        try {
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: document.getElementById('staff-email').value.trim(), password: document.getElementById('staff-password').value }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Sign-in failed');
+            this.staffForm.reset();
+            await this.resolveGift();
+        } catch (error) {
+            this.accessError.textContent = error.message;
         } finally {
-            this.setBusy(this.accessForm, false);
+            this.setBusy(this.staffForm, false);
         }
     }
 
@@ -226,10 +260,9 @@ class AccessGate {
             groomName: document.getElementById('fill-groom-name').value.trim(),
             brideName: document.getElementById('fill-bride-name').value.trim(),
             weddingDate: document.getElementById('fill-wedding-date').value,
-            creationCode: document.getElementById('fill-creation-code').value.trim(),
         };
 
-        if (!payload.groomName || !payload.brideName || !payload.weddingDate || !payload.creationCode) {
+        if (!payload.groomName || !payload.brideName || !payload.weddingDate) {
             this.fillError.textContent = 'Please fill in every field.';
             return;
         }
@@ -237,7 +270,7 @@ class AccessGate {
         this.setBusy(this.fillForm, true);
         try {
             const res = await fetch('/api/gift-fill', {
-                method: 'POST',
+                method: this.pendingFilled ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });

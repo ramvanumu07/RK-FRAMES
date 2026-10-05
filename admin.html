@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin — Wedding Gift Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
     <!-- LOGIN VIEW -->
     <div id="login-view" class="view">
         <div class="login-card">
-            <h1>Admin Login</h1>
+            <h1>Frame Studio</h1>
             <form id="login-form">
                 <input type="email" id="login-email" placeholder="Email" required autocomplete="username">
                 <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
@@ -23,7 +24,7 @@
     <!-- DASHBOARD VIEW -->
     <div id="dashboard-view" class="view" hidden>
         <header class="topbar">
-            <h1>Wedding Gift Admin</h1>
+            <h1>Frame Studio</h1>
             <div class="topbar-right">
                 <span id="current-user"></span>
                 <button id="logout-btn" class="btn-secondary">Log Out</button>
@@ -31,13 +32,40 @@
         </header>
 
         <main>
+            <section class="panel" id="batch-panel" hidden>
+                <div class="panel-header"><h2>Generate Frames</h2><span class="print-label">1536 × 1024 / lossless PNG</span></div>
+                <form id="batch-form" class="batch-layout">
+                    <div class="template-choice">
+                        <img id="template-preview" alt="Selected Radha Krishna frame template">
+                        <label>Frame template<select id="batch-template" required></select></label>
+                    </div>
+                    <div class="batch-controls">
+                        <label>Number of frames<input id="batch-quantity" type="number" min="1" max="100" value="10" required></label>
+                        <p id="batch-destination" class="muted"></p>
+                        <p id="code-settings" class="muted"></p>
+                        <button id="generate-batch-btn" class="btn-primary" type="submit"><i data-lucide="layers"></i>Create and download</button>
+                        <p id="batch-progress" role="status" class="muted"></p>
+                        <p class="error" id="batch-error" role="alert"></p>
+                    </div>
+                </form>
+                <div class="panel-header batch-history-heading"><h2>Recent Batches</h2></div>
+                <div class="table-scroll"><table class="data-table">
+                    <thead><tr><th>Template</th><th>Frames</th><th>Website</th><th>Created</th><th>Export</th></tr></thead>
+                    <tbody id="batches-table-body"></tbody>
+                </table></div>
+            </section>
             <section class="panel">
                 <div class="panel-header">
                     <h2>Gift Codes</h2>
-                    <button id="new-gift-btn" class="btn-primary">+ New Gift Code</button>
                 </div>
+                <div id="inventory-summary" class="inventory-summary" aria-live="polite"></div>
+                <form id="gift-search-form" class="search-toolbar">
+                    <input id="gift-search" type="search" aria-label="Search code or couple" placeholder="Search code or couple">
+                    <select id="gift-status" aria-label="Gift status"><option value="all">All gifts</option><option value="empty">Awaiting details</option><option value="filled">Personalized</option></select>
+                    <button class="btn-secondary" type="submit" title="Search"><i data-lucide="search"></i><span>Search</span></button>
+                </form>
                 <p class="error" id="gifts-error"></p>
-                <table class="data-table">
+                <div class="table-scroll"><table class="data-table">
                     <thead>
                         <tr>
                             <th>Access Code</th>
@@ -50,7 +78,8 @@
                         </tr>
                     </thead>
                     <tbody id="gifts-table-body"></tbody>
-                </table>
+                </table></div>
+                <div class="pagination"><button id="previous-page" class="btn-secondary" title="Previous page"><i data-lucide="chevron-left"></i></button><span id="page-label"></span><button id="next-page" class="btn-secondary" title="Next page"><i data-lucide="chevron-right"></i></button></div>
             </section>
 
             <section class="panel" id="users-panel" hidden>
@@ -59,7 +88,7 @@
                     <button id="new-user-btn" class="btn-primary">+ New User</button>
                 </div>
                 <p class="error" id="users-error"></p>
-                <table class="data-table">
+                <div class="table-scroll"><table class="data-table">
                     <thead>
                         <tr>
                             <th>Email</th>
@@ -68,7 +97,7 @@
                         </tr>
                     </thead>
                     <tbody id="users-table-body"></tbody>
-                </table>
+                </table></div>
             </section>
         </main>
     </div>
@@ -79,9 +108,9 @@
             <h3>Edit Gift</h3>
             <form id="edit-form">
                 <input type="hidden" id="edit-id">
-                <label>Groom's Name<input type="text" id="edit-groom-name" required></label>
-                <label>Bride's Name<input type="text" id="edit-bride-name" required></label>
-                <label>Wedding Date<input type="date" id="edit-wedding-date" required></label>
+                <label>Groom's Name<input type="text" id="edit-groom-name" maxlength="100" required></label>
+                <label>Bride's Name<input type="text" id="edit-bride-name" maxlength="100" required></label>
+                <label>Wedding Date<input type="date" id="edit-wedding-date" min="1900-01-01" required></label>
                 <p class="error" id="edit-error"></p>
                 <div class="modal-actions">
                     <button type="button" id="edit-cancel-btn" class="btn-secondary">Cancel</button>
@@ -113,6 +142,7 @@
         </div>
     </div>
 
-    <script src="admin.js"></script>
+    <script src="/vendor/lucide.js"></script>
+    <script src="admin.js?v=20261005-2"></script>
 </body>
 </html>

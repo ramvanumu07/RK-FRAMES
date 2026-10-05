@@ -42,6 +42,23 @@ async function main() {
 
     console.log('Tables ready.');
 
+    await sql.transaction([
+        sql`CREATE TABLE IF NOT EXISTS frame_batches (
+            id uuid PRIMARY KEY,
+            request_key uuid UNIQUE NOT NULL,
+            template_name text NOT NULL,
+            template_config jsonb NOT NULL,
+            quantity integer NOT NULL CHECK (quantity BETWEEN 1 AND 100),
+            site_url text NOT NULL,
+            created_by integer REFERENCES users(id),
+            created_at timestamptz NOT NULL DEFAULT now()
+        )`,
+        sql`ALTER TABLE gifts ADD COLUMN IF NOT EXISTS batch_id uuid REFERENCES frame_batches(id)`,
+        sql`ALTER TABLE gifts ADD COLUMN IF NOT EXISTS frame_number integer`,
+        sql`ALTER TABLE gifts ADD COLUMN IF NOT EXISTS public_url text`,
+        sql`CREATE UNIQUE INDEX IF NOT EXISTS gifts_batch_number ON gifts(batch_id, frame_number)`,
+    ]);
+
     const email = process.env.ADMIN_EMAIL;
     const password = process.env.ADMIN_PASSWORD;
 
@@ -50,7 +67,7 @@ async function main() {
         await sql`
             INSERT INTO users (email, password_hash, role)
             VALUES (${email}, ${passwordHash}, 'admin')
-            ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash
+            ON CONFLICT (email) DO NOTHING
         `;
         console.log(`Admin account ready: ${email}`);
     } else {

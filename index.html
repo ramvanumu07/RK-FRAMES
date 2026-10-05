@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="A premium digital wedding gift">
     <title>A Gift for You</title>
@@ -15,20 +16,14 @@
 </head>
 
 <body>
-    <!-- SCREEN 0a: GIFT CODE GATE -->
-    <!-- gate-bg.png already contains the heading, subtitle and ornamental
-         dividers — only the form is overlaid, in the blank band between
-         them, same "template + data overlay" pattern as Screen 2. -->
-    <div id="screen-access" class="screen screen-access">
-        <div class="gate-canvas">
-            <img class="gate-bg" src="gate-bg.webp" alt="" aria-hidden="true">
-            <div class="gate-content">
-                <form id="access-form" class="gate-form" autocomplete="off">
-                    <input type="text" id="access-code-input" class="gate-input gate-input-code" placeholder="GIFT CODE" required>
-                    <button type="submit" class="gate-submit">Open My Gift</button>
-                </form>
-                <p class="gate-error" id="access-error"></p>
-            </div>
+    <div id="screen-access" class="screen screen-access" style="display: none">
+        <div class="gate-canvas-plain">
+            <p class="gate-error" id="access-error" role="status"></p>
+            <form id="staff-login-form" class="gate-form" style="display: none">
+                <input type="email" id="staff-email" class="gate-input" placeholder="Shop owner email" autocomplete="username" required>
+                <input type="password" id="staff-password" class="gate-input" placeholder="Password" autocomplete="current-password" required>
+                <button type="submit" class="gate-submit">Shop Owner Sign In</button>
+            </form>
         </div>
     </div>
 
@@ -42,7 +37,6 @@
                 <input type="text" id="fill-groom-name" class="gate-input" placeholder="Groom's Name" required>
                 <input type="text" id="fill-bride-name" class="gate-input" placeholder="Bride's Name" required>
                 <input type="date" id="fill-wedding-date" class="gate-input" required>
-                <input type="text" id="fill-creation-code" class="gate-input gate-input-code" placeholder="CREATION CODE" required>
                 <button type="submit" class="gate-submit">Save &amp; Continue</button>
             </form>
             <p class="gate-error" id="fill-error"></p>
@@ -56,22 +50,22 @@
              percentage coordinates. Nothing here participates in document
              flow after the video — it is all painted on the same canvas. -->
         <div class="welcome-canvas">
-            <video id="welcome-video" class="welcome-video" muted playsinline>
+            <video id="welcome-video" class="welcome-video" autoplay muted playsinline preload="auto">
                 <source src="Krishna_and_Radha_meeting_1080p_20260912151343.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
 
             <div class="couple-names-row">
-                <span class="name-groom" id="groom-name">RAMAKRISHNAN</span>
+                <span class="name-groom" id="groom-name"></span>
                 <span class="name-ampersand">&</span>
-                <span class="name-bride" id="bride-name">KALAMUTHU</span>
+                <span class="name-bride" id="bride-name"></span>
             </div>
 
             <div class="ornament-divider"></div>
 
             <div class="together-label">TOGETHER SINCE</div>
 
-            <div class="wedding-date" id="wedding-date">12 SEPTEMBER 2018</div>
+            <div class="wedding-date" id="wedding-date"></div>
         </div>
     </div>
 
@@ -86,13 +80,13 @@
             <img class="journey-bg" src="screen2.webp" alt="" aria-hidden="true">
 
             <div class="journey-names" id="journey-names">
-                <span id="journey-groom-name">Ramakrishnan</span>
+                <span id="journey-groom-name"></span>
                 <span class="journey-amp">&amp;</span>
-                <span id="journey-bride-name">Kalamuthu</span>
+                <span id="journey-bride-name"></span>
             </div>
             <div class="journey-wedding-date" id="journey-wedding-date">
-                <span class="date-month" id="journey-date-month">September</span>
-                <span class="date-day-year" id="journey-date-day-year">12, 2018</span>
+                <span class="date-month" id="journey-date-month"></span>
+                <span class="date-day-year" id="journey-date-day-year"></span>
             </div>
 
             <div class="anniversary-label">Next<br>Anniversary In</div>

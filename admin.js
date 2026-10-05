@@ -10,6 +10,30 @@ const usersPanel = document.getElementById('users-panel');
 const currentUserLabel = document.getElementById('current-user');
 
 let currentRole = null;
+let giftPage = 1;
+let frameTemplates = [];
+
+function icons() { window.lucide?.createIcons(); }
+
+function textCell(row, value) {
+    const cell = document.createElement('td');
+    cell.textContent = value ?? '';
+    row.appendChild(cell);
+    return cell;
+}
+
+function actionButton(label, icon, handler, className = 'btn-secondary') {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    const glyph = document.createElement('i');
+    glyph.dataset.lucide = icon;
+    button.appendChild(glyph);
+    button.addEventListener('click', handler);
+    return button;
+}
 
 async function api(path, options = {}) {
     const res = await fetch(path, {
@@ -45,8 +69,11 @@ function showDashboard() {
     loginView.hidden = true;
     dashboardView.hidden = false;
     usersPanel.hidden = currentRole !== 'admin';
+    document.getElementById('batch-panel').hidden = currentRole !== 'admin';
+    giftPage = 1;
     loadGifts();
-    if (currentRole === 'admin') loadUsers();
+    if (currentRole === 'admin') { loadUsers(); loadBatches(); }
+    icons();
 }
 
 document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -79,7 +106,12 @@ async function loadGifts() {
     const errorEl = document.getElementById('gifts-error');
     errorEl.textContent = '';
     try {
-        const { gifts } = await api('/api/admin/gifts');
+        const params = new URLSearchParams({ page: giftPage, search: document.getElementById('gift-search').value, status: document.getElementById('gift-status').value });
+        const { gifts, counts, hasMore } = await api(`/api/admin/gifts?${params}`);
+        document.getElementById('inventory-summary').textContent = `${counts.total.toLocaleString()} frames / ${counts.filled.toLocaleString()} personalized / ${(counts.total - counts.filled).toLocaleString()} awaiting details`;
+        document.getElementById('page-label').textContent = `Page ${giftPage}`;
+        document.getElementById('previous-page').disabled = giftPage === 1;
+        document.getElementById('next-page').disabled = !hasMore;
         renderGifts(gifts);
     } catch (err) {
         errorEl.textContent = err.message;
@@ -94,39 +126,37 @@ function renderGifts(gifts) {
         const filled = gift.filled_at !== null;
         const tr = document.createElement('tr');
 
-        tr.innerHTML = `
-            <td class="access-code-cell" title="Click to copy">${gift.access_code}</td>
-            <td><span class="status-badge ${filled ? 'status-filled' : 'status-empty'}">${filled ? 'Filled' : 'Empty'}</span></td>
-            <td>${gift.groom_name || '—'}</td>
-            <td>${gift.bride_name || '—'}</td>
-            <td>${gift.wedding_date || '—'}</td>
-            <td>${new Date(gift.created_at).toLocaleDateString()}</td>
-            <td class="row-actions">
-                <button class="btn-secondary edit-btn">Edit</button>
-                <button class="btn-danger delete-btn">Delete</button>
-            </td>
-        `;
-
-        tr.querySelector('.access-code-cell').addEventListener('click', () => {
-            navigator.clipboard.writeText(gift.access_code);
-        });
-        tr.querySelector('.edit-btn').addEventListener('click', () => openEditModal(gift));
-        tr.querySelector('.delete-btn').addEventListener('click', () => deleteGift(gift));
-
+        const codeCell = textCell(tr, '');
+        const link = document.createElement('a');
+        link.textContent = gift.access_code;
+        link.href = `/g/${encodeURIComponent(gift.access_code)}`;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.className = 'access-code-cell';
+        codeCell.appendChild(link);
+        const status = textCell(tr, '');
+        const badge = document.createElement('span');
+        badge.className = `status-badge ${filled ? 'status-filled' : 'status-empty'}`;
+        badge.textContent = filled ? 'Personalized' : 'Awaiting details';
+        status.appendChild(badge);
+        textCell(tr, gift.groom_name || '-');
+        textCell(tr, gift.bride_name || '-');
+        textCell(tr, gift.wedding_date || '-');
+        textCell(tr, new Date(gift.created_at).toLocaleDateString());
+        const actions = textCell(tr, '');
+        actions.className = 'row-actions';
+        actions.appendChild(actionButton('Edit wedding details', 'pencil', () => openEditModal(gift)));
+        if (currentRole === 'admin' && !gift.batch_id) actions.appendChild(actionButton('Delete unprinted gift', 'trash-2', () => deleteGift(gift), 'btn-danger'));
         tbody.appendChild(tr);
     }
+    if (!gifts.length) { const row = tbody.insertRow(); const cell = row.insertCell(); cell.colSpan = 7; cell.textContent = 'No matching gifts'; }
+    icons();
 }
 
-document.getElementById('new-gift-btn').addEventListener('click', async () => {
-    const errorEl = document.getElementById('gifts-error');
-    errorEl.textContent = '';
-    try {
-        await api('/api/admin/gifts', { method: 'POST' });
-        loadGifts();
-    } catch (err) {
-        errorEl.textContent = err.message;
-    }
-});
+document.getElementById('gift-search-form').addEventListener('submit', (event) => { event.preventDefault(); giftPage = 1; loadGifts(); });
+document.getElementById('gift-status').addEventListener('change', () => { giftPage = 1; loadGifts(); });
+document.getElementById('previous-page').addEventListener('click', () => { if (giftPage > 1) giftPage--; loadGifts(); });
+document.getElementById('next-page').addEventListener('click', () => { giftPage++; loadGifts(); });
 
 async function deleteGift(gift) {
     if (!confirm(`Delete access code ${gift.access_code}? This cannot be undone.`)) return;
@@ -194,11 +224,9 @@ function renderUsers(users) {
     tbody.innerHTML = '';
     for (const user of users) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${user.email}</td>
-            <td>${user.role}</td>
-            <td>${new Date(user.created_at).toLocaleDateString()}</td>
-        `;
+        textCell(tr, user.email);
+        textCell(tr, user.role === 'staff' ? 'Shop owner' : 'Admin');
+        textCell(tr, new Date(user.created_at).toLocaleDateString());
         tbody.appendChild(tr);
     }
 }
@@ -235,4 +263,96 @@ document.getElementById('new-user-form').addEventListener('submit', async (e) =>
     }
 });
 
+async function loadBatches() {
+    try {
+        const result = await api('/api/admin/batches');
+        frameTemplates = result.templates;
+        const select = document.getElementById('batch-template');
+        if (!select.options.length) {
+            for (const template of frameTemplates) select.add(new Option(template.name, template.id));
+            updateTemplate();
+        }
+        document.getElementById('batch-destination').textContent = result.siteUrl ? `Destination: ${result.siteUrl}${/localhost|127\.0\.0\.1/.test(result.siteUrl) ? ' (local testing only)' : ''}` : 'PUBLIC_SITE_URL is not configured on the server.';
+        document.getElementById('code-settings').textContent = `${result.codeLength}-character codes / created on demand`;
+        const tbody = document.getElementById('batches-table-body');
+        tbody.replaceChildren();
+        for (const batch of result.batches) {
+            const row = tbody.insertRow();
+            textCell(row, batch.template_name);
+            textCell(row, batch.quantity);
+            textCell(row, batch.site_url);
+            textCell(row, new Date(batch.created_at).toLocaleString());
+            textCell(row, '').appendChild(actionButton('Download ZIP', 'download', async (event) => {
+                event.currentTarget.disabled = true;
+                const button = event.currentTarget;
+                try { await downloadBatch(batch.id); }
+                catch (error) { document.getElementById('batch-error').textContent = error.message; }
+                finally { button.disabled = false; }
+            }));
+        }
+        if (!result.batches.length) { const cell = tbody.insertRow().insertCell(); cell.colSpan = 5; cell.textContent = 'No batches yet'; }
+        icons();
+    } catch (error) { document.getElementById('batch-error').textContent = error.message; }
+}
+
+function updateTemplate() {
+    const template = frameTemplates.find((item) => item.id === document.getElementById('batch-template').value);
+    if (template) document.getElementById('template-preview').src = `/${encodeURIComponent(template.artwork)}`;
+}
+
+async function downloadBatch(id) {
+    const progress = document.getElementById('batch-progress');
+    progress.textContent = 'Preparing ZIP...';
+    let job;
+    try {
+        ({ job } = await api(`/api/admin/batches?prepare=${encodeURIComponent(id)}`, { method: 'POST' }));
+        const deadline = Date.now() + 20 * 60 * 1000;
+        while (true) {
+            const status = await api(`/api/admin/batches?job=${encodeURIComponent(job)}`);
+            if (status.status === 'failed') throw new Error(status.error || 'ZIP preparation failed');
+            if (status.status === 'ready') break;
+            progress.textContent = `Rendering and verifying frames: ${status.completed} / ${status.quantity}`;
+            if (Date.now() > deadline) throw new Error('Export is taking longer than expected. Retry from Recent Batches.');
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+    } catch (error) {
+        progress.textContent = 'Download not started';
+        throw new Error(error instanceof TypeError ? 'Connection lost while preparing the ZIP. Retry from Recent Batches without creating another batch.' : error.message);
+    }
+    const link = document.createElement('a');
+    link.href = `/api/admin/batches?download=${encodeURIComponent(id)}&job=${encodeURIComponent(job)}`;
+    link.download = `frames-${id}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    progress.textContent = 'ZIP download started';
+}
+
+document.getElementById('batch-template').addEventListener('change', updateTemplate);
+document.getElementById('batch-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = document.getElementById('generate-batch-btn');
+    const errorLabel = document.getElementById('batch-error');
+    errorLabel.textContent = '';
+    const payload = { templateId: document.getElementById('batch-template').value, quantity: Number(document.getElementById('batch-quantity').value) };
+    if (!confirm(`Create ${payload.quantity} new gift records and frame images?`)) return;
+    button.disabled = true;
+    document.getElementById('batch-progress').textContent = 'Creating gift records and unique codes...';
+    const signature = JSON.stringify(payload);
+    try {
+        let pending = JSON.parse(sessionStorage.getItem('pending-frame-batch') || 'null');
+        if (pending?.signature !== signature) pending = { signature, key: crypto.randomUUID() };
+        sessionStorage.setItem('pending-frame-batch', JSON.stringify(pending));
+        const result = await api('/api/admin/batches', { method: 'POST', body: JSON.stringify({ ...payload, requestKey: pending.key }) });
+        sessionStorage.removeItem('pending-frame-batch');
+        await loadBatches();
+        await loadGifts();
+        await downloadBatch(result.batch.id);
+    } catch (error) {
+        errorLabel.textContent = error.message;
+        document.getElementById('batch-progress').textContent = 'Download existing batches from Recent Batches.';
+    } finally { button.disabled = false; }
+});
+
+icons();
 boot();

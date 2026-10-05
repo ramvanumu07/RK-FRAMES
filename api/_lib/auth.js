@@ -64,10 +64,10 @@ function parseCookies(header) {
  * Returns the decoded { sub, email, role } payload, or null if missing/invalid.
  */
 function getSession(req) {
-    const parsed = parseCookies(req.headers.cookie);
-    const token = parsed[COOKIE_NAME];
-    if (!token) return null;
     try {
+        const parsed = parseCookies(req.headers.cookie);
+        const token = parsed[COOKIE_NAME];
+        if (!token) return null;
         return jwt.verify(token, process.env.JWT_SECRET);
     } catch {
         return null;

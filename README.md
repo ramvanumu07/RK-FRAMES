@@ -1,114 +1,71 @@
-# Premium Digital Wedding Gift Experience
+# Frame Studio
 
-A personalized, two-screen mobile-first digital wedding gift that opens
-through a QR code + access code — with a couple's names, wedding date,
-and live "journey so far" statistics. Backed by Neon Postgres so the
-same physical product (a QR-coded photo frame) can be resold to many
-different couples, each personalizing their own gift on first scan.
+Radha-Krishna print frames with unique QR-linked wedding gifts, backed by Neon PostgreSQL.
 
-## How it works (end-to-end)
+## Roles and flow
 
-1. **We provision codes.** Using the admin dashboard, we generate a
-   batch of unique access codes (one per frame we're printing).
-2. **We print + sell frames.** Each frame gets its access code printed
-   on it (and a QR code linking to the site). Buyers are also given
-   the shared **Creation Code** (kept secret, changed per business
-   needs) at time of purchase — proof they're a legitimate buyer, not
-   a stranger with a guessed code.
-3. **First scan:** the buyer enters their access code. Since the row is
-   still empty, they're shown a short form (groom's name, bride's name,
-   wedding date, Creation Code). Submitting it locks in their data
-   forever — the form never appears again for that code.
-4. **Every scan after that** (by them or their guests) goes straight to
-   the personalized Screen 1 (welcome video) → Screen 2 ("Our Journey
-   So Far") experience.
-5. **We manage everything** afterward from the admin dashboard: create
-   new codes, edit/delete any row, add more admin/staff accounts.
+1. **Admin:** signs in at `/admin`, selects an approved template and quantity, then creates and downloads a batch. The destination comes exclusively from `PUBLIC_SITE_URL` on the server.
+2. **Export:** each batch creates exactly the requested number of gift rows on demand, each with a unique cryptographically generated 6-character code. A database uniqueness constraint and collision retries prevent duplicates; records and batch settings are inserted atomically. Retrying the same request key does not create more rows. Its ZIP contains `1.png` through `N.png`, each linking to `/g/<code>`.
+3. **Shop owner:** uses a staff account created by the admin, scans an empty frame, signs in, and saves the groom's name, bride's name, and wedding date.
+4. **Customer:** scans the same QR and immediately enjoys the personalized welcome video and journey statistics. No login or activation code is required.
+5. **Corrections:** authenticated staff can open the gift's Manage link or edit it from the dashboard. Visitors cannot change details. Unpersonalized gifts show a pending state to visitors.
 
-## Project structure
+Staff accounts share gift inventory; separate per-shop inventory ownership is not implemented.
 
-```
-RK/
-├── index.html            # Access-code gate + fill-in form + Screen 1 + Screen 2
-├── styles.css            # All visual styling (gate screens + both experience screens)
-├── script.js             # AccessGate + WeddingGiftExperience (screen logic)
-├── utils.js              # Date/number calculation helpers
-├── admin.html/.js/.css   # Admin dashboard (login, gift codes, users)
-├── screen2.png           # Fixed "Our Journey So Far" artwork template
-├── Krishna_and_Radha_meeting...mp4  # Welcome video (Screen 1)
-├── api/                  # Serverless functions (Vercel-compatible)
-│   ├── _lib/db.js         # Shared Neon client
-│   ├── _lib/auth.js       # JWT session helpers (admin login)
-│   ├── gift.js             # GET  /api/gift?code=          (public lookup)
-│   ├── gift-fill.js        # POST /api/gift-fill           (public, first-time setup)
-│   └── admin/
-│       ├── login.js / logout.js / me.js
-│       ├── gifts.js        # GET (list) / POST (create new empty code)
-│       ├── gift.js         # PUT (edit) / DELETE, by ?id=
-│       └── users.js        # GET/POST — admin-only user management
-├── scripts/
-│   ├── migrate.js          # Creates tables + seeds first admin (safe to re-run)
-│   ├── seed-test-data.js   # Optional: seeds disposable rows for manual QA
-│   └── cleanup-test-data.js
-├── dev-server.js          # Local dev server (static files + emulated /api routes)
-└── .env                   # DATABASE_URL, CREATION_CODE, JWT_SECRET, ADMIN_EMAIL/PASSWORD (gitignored)
-```
-
-## Running locally
+## Setup
 
 ```bash
 npm install
-npm run migrate     # one-time: creates tables + seeds the first admin account
-npm run dev         # starts the site + API at http://localhost:8000
+npm run backup
+npm run migrate
+npm run dev
 ```
 
-Visit `http://localhost:8000/` for the gift experience, or
-`http://localhost:8000/admin` for the dashboard (log in with the
-`ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`).
+The default server is `http://localhost:8000`; admin login is at `/admin`. Set `PORT` to use another port. Migration preserves existing records and does not reset an existing admin password. Backups are private, gitignored NDJSON files under `backups/`, with one table-tagged record per line. Backups page through large inventories; stop concurrent writes while taking a backup if you need a consistent point-in-time copy.
 
-> `dev-server.js` is a lightweight local stand-in for Vercel's runtime —
-> it serves the static files and routes `/api/*` requests to the same
-> handler files Vercel would run in production. There's no separate
-> "build" step; the `/api` files are plain CommonJS functions.
+## Configuration
 
-## Environment variables (`.env`, never committed)
+| Environment variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Neon database connection string |
+| `JWT_SECRET` | Long random secret signing staff/admin sessions |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Initial admin seed; existing accounts are not overwritten |
+| `PUBLIC_SITE_URL` | Required public origin for new batches, such as `https://gifts.your-domain.com`; restart the server after changing it |
+| `PORT` | Server port, default 8000 |
+| `NODE_ENV` | Set to `production` behind HTTPS for secure cookies |
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | Neon Postgres connection string |
-| `CREATION_CODE` | Shared secret buyers enter once to activate their frame |
-| `JWT_SECRET` | Signs the admin session cookie |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seeds the first admin account (only used by `scripts/migrate.js`) |
+`CREATION_CODE` is no longer used. Staff authentication replaces buyer activation codes.
 
-## Deploying
+## Templates and printing
 
-This is structured to deploy on **Vercel** with a **Neon** database:
-1. Push the repo (`.env` stays out of git — set the same variables in
-   the Vercel project's Environment Variables settings instead).
-2. Vercel auto-detects the `/api/*.js` files as serverless functions and
-   serves everything else (`index.html`, `admin.html`, etc.) as static
-   files — no extra config needed.
-3. Run `npm run migrate` once (pointed at the production `DATABASE_URL`)
-   to create the tables and seed the first admin account.
+Approved templates are registered in `api/_lib/frames.js`. Each registration includes artwork, QR placement, colors, and print dimensions. Batch records snapshot those settings and persist individual URLs. Re-downloading a batch does not create new gifts. Keep the template's original artwork available and immutable for future downloads.
 
-## Security notes
+New batches export optimized lossless PNGs at the artwork's original 1536 x 1024 resolution, retaining its 72-DPI metadata. There is no enlargement or palette quantization, and artwork pixels outside the QR placement remain unchanged. At a physical print size of 15 x 10 inches, this source provides approximately 102 pixels per inch; upscaling would not add genuine detail. Previously created batches retain their saved dimensions when re-downloaded.
 
-- The Creation Code and admin passwords are never sent to the browser
-  except at the moment of an actual login/fill-in submission over
-  HTTPS; they're checked server-side against environment variables /
-  bcrypt hashes.
-- Admin sessions are httpOnly JWT cookies — not accessible to
-  client-side JS, reducing XSS exposure.
-- Once a gift row is filled in, the public form permanently refuses to
-  touch it again (only the admin dashboard can edit it afterward).
+The red `#C80000` QR is centered at (1278, 720), with its complete borderless 110 x 110 pixel box starting at (1223, 665). Its light cells are `#FCEBC9`. The user selected this exact placement to merge into the existing red heart pattern, without a quiet zone. The isolated QR crop is decoded and checked against its assigned URL before export; this does not verify detection against surrounding decoration. The merged artwork failed detection in a larger crop during testing, so phone scanning and physical print tests are essential. Clipping QR modules into a heart is avoided.
 
-## Design principles (unchanged from the original vision)
+**Use the deployed HTTPS domain before printing customer frames.** A `localhost` URL is only accessible on the device running the server. For phone testing, use the computer's LAN address on the same Wi-Fi. Print and scan a physical sample before producing a batch; automatic digital decoding cannot guarantee camera/printer performance.
 
-- **Zero setup for wedding guests** — they just scan and view.
-- **Premium aesthetic** — elegant serif typography, warm gold accents,
-  inspired by luxury Indian wedding stationery.
-- **Fully responsive** — verified across many phone aspect ratios,
-  landscape, and desktop without ever cropping the artwork.
-- **No tracking, no ads, no accounts for the couple** — the only
-  "account system" in this project is for us (the sellers) to manage
-  inventory of codes.
+Batch size is limited to 100. The server prepares ZIPs as background jobs in its private temporary directory, with one active export per process. The dashboard polls progress and reports failures as JSON before offering a download. Ready ZIPs use native browser downloads rather than browser-memory blobs. Up to five exports are cached for 30 minutes; enough temporary disk space is required. Jobs are process-local, so restarting the server requires preparing the download again. Failed exports can be retried from Recent Batches without allocating more codes. Printed batch records cannot be deleted through the dashboard.
+
+## Deployment
+
+Run `npm start` on a persistent Node host, such as Render, with the environment variables above and HTTPS. Deploy the artwork and video assets too. The included server handles `/g/<code>`, API routes, and range requests for video.
+
+Direct Vercel deployment is not configured: it would require gift-link rewrites, icon asset handling, and a background/export storage approach suitable for serverless time and response-size limits. The current export implementation is intended for a single persistent Node process.
+
+## Verification
+
+```bash
+npm test
+npx playwright install chromium
+npm run verify
+```
+
+`npm test` requires no database and checks 4-6-character code generation, calendar validation, permissions, atomic activation, environment-only URLs, batch limits, numbered ZIPs, QR decoding, native resolution, and unchanged artwork pixels. `npm run verify` requires the running server and Neon credentials; its default origin is `http://localhost:8010` (override with `VERIFY_ORIGIN`). It creates a temporary batch and verifies exactly the requested number of new rows with 6-character codes, even after retrying the same request. It checks native ZIP downloads, rendering-failure status, and staff/customer flows, then captures desktop/mobile screenshots under `backups/verification`. Cleanup deletes only its temporary gifts, batch, and staff account. If interrupted, identify the verification batch before deleting its temporary records.
+
+## Security
+
+Codes default to 6 characters, and the shared generator supports lengths from 4 to 6. Short codes are guessable and should not be treated as private secrets. Public viewers have read-only access; anyone with a QR link or a guessed code can view that gift, so avoid sensitive personal information. Staff sessions use HttpOnly cookies, mutation requests reject cross-site origins, sign-in attempts are throttled, and private files are not served by the Node server. The login throttle is process-local; add shared rate limiting when scaling beyond one server.
+
+Rotate any credentials exposed outside your secrets store before public deployment. Keep database backups outside version control and protect them: they include password hashes and gift details.
