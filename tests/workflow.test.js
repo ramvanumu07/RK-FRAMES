@@ -89,6 +89,18 @@ test('QR lookup needs no manual gift-code form and handles missing, invalid, and
     assert.ok(staff.elements['screen-fill'].classList.has('fade-in'));
     const legacyLink = await resolve('/', '?code=ABCD', gift);
     assert.equal(legacyLink.opened, gift);
+    const edit = await resolve('/g/ABCD/edit', '', { ...gift, canManage: true });
+    assert.deepEqual(edit.calls, ['/api/gift?code=ABCD']);
+    assert.equal(edit.opened, undefined);
+    assert.ok(edit.elements['screen-fill'].classList.has('fade-in'));
+    assert.equal(edit.elements['fill-groom-name'].value, gift.groomName);
+    assert.equal(edit.elements['fill-bride-name'].value, gift.brideName);
+    assert.equal(edit.elements['fill-wedding-date'].value, gift.weddingDate);
+    const visitorEdit = await resolve('/g/ABCD/edit', '', { ...gift, canManage: false });
+    assert.equal(visitorEdit.opened, undefined);
+    assert.equal(visitorEdit.elements['staff-login-form'].style.display, 'flex');
+    const editQuery = await resolve('/edit', '?code=ABCD', { ...gift, canManage: true });
+    assert.ok(editQuery.elements['screen-fill'].classList.has('fade-in'));
 });
 
 test('gift details preserve date-only values and reject invalid calendar dates', () => {
@@ -254,4 +266,25 @@ test('landing page contains only WhatsApp actions and no technical implementatio
     assert.doesNotMatch(html, /<form\b|<input\b|<button\b|\/api\/|\/admin|database|Neon|QR code|access code|serverless/i);
     assert.match(html, /gift shops &amp; resellers/i);
     assert.match(html, /Radha Krishna/);
+});
+
+test('Render public URL is used when unset; PUBLIC_SITE_URL overrides it', () => {
+    const previousSite = process.env.PUBLIC_SITE_URL;
+    const previousRender = process.env.RENDER_EXTERNAL_URL;
+    const body = { templateId: templates[0].id, quantity: 1, siteUrl: 'https://untrusted.example.com' };
+    try {
+        delete process.env.PUBLIC_SITE_URL;
+        process.env.RENDER_EXTERNAL_URL = 'https://rk-example.onrender.com';
+        assert.equal(batchInput(body).origin, 'https://rk-example.onrender.com');
+        process.env.PUBLIC_SITE_URL = ' https://gifts.example.com ';
+        assert.equal(batchInput(body).origin, 'https://gifts.example.com');
+        process.env.PUBLIC_SITE_URL = ' ';
+        assert.equal(batchInput(body).origin, 'https://rk-example.onrender.com');
+        delete process.env.PUBLIC_SITE_URL;
+        delete process.env.RENDER_EXTERNAL_URL;
+        assert.throws(() => batchInput(body), /PUBLIC_SITE_URL.*redeploy/);
+    } finally {
+        if (previousSite === undefined) delete process.env.PUBLIC_SITE_URL; else process.env.PUBLIC_SITE_URL = previousSite;
+        if (previousRender === undefined) delete process.env.RENDER_EXTERNAL_URL; else process.env.RENDER_EXTERNAL_URL = previousRender;
+    }
 });

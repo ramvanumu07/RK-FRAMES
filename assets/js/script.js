@@ -172,11 +172,12 @@ class AccessGate {
         this.accessError = document.getElementById('access-error');
         this.fillForm = document.getElementById('fill-form');
         this.fillError = document.getElementById('fill-error');
-        const code = location.pathname.match(/^\/g\/([A-Z0-9]{4,64})$/i)?.[1] || new URLSearchParams(location.search).get('code');
+        const route = location.pathname.match(/^\/g\/([A-Z0-9]{4,64})(\/edit)?\/?$/i);
+        const code = route?.[1] || new URLSearchParams(location.search).get('code');
         this.pendingCode = (code || '').trim().toUpperCase();
         this.pendingFilled = false;
         this.staffForm = document.getElementById('staff-login-form');
-        this.managing = new URLSearchParams(location.search).get('manage') === '1';
+        this.managing = Boolean(route?.[2]) || /^\/edit\/?$/i.test(location.pathname) || new URLSearchParams(location.search).get('manage') === '1';
 
         this.fillForm.addEventListener('submit', (e) => this.handleFillSubmit(e));
         this.staffForm.addEventListener('submit', (event) => this.handleStaffLogin(event));
@@ -282,6 +283,7 @@ class AccessGate {
             }
 
             this.screenFill.classList.add('fade-out');
+            if (this.managing) history.replaceState(null, '', `/g/${this.pendingCode}`);
             new WeddingGiftExperience(data);
         } catch (err) {
             console.error(err);

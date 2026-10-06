@@ -110,7 +110,7 @@ function serveStatic(req, res, pathname) {
         /\.(?:log|json|zip)$/i.test(pathname)) {
         res.writeHead(403); res.end('Forbidden'); return;
     }
-    if (/^\/g\/[A-Z0-9]{4,64}$/i.test(pathname)) pathname = '/index.html';
+    if (/^\/g\/[A-Z0-9]{4,64}(?:\/edit)?\/?$/i.test(pathname) || /^\/edit\/?$/i.test(pathname)) pathname = '/index.html';
     if (pathname === '/admin') pathname = '/admin.html';
     const legacyAssets = {
         '/admin.js': '/assets/js/admin.js',

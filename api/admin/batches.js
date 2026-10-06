@@ -5,7 +5,7 @@ const path = require('path');
 const { pipeline } = require('stream/promises');
 const { sql } = require('../_lib/db');
 const { requireSession } = require('../_lib/auth');
-const { templates, batchInput, exportBatch } = require('../_lib/frames');
+const { templates, batchInput, exportBatch, configuredSiteUrl } = require('../_lib/frames');
 const { generateCodes } = require('../_lib/codes');
 
 let exporting = false;
@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
     }
     if (req.method === 'GET') {
         const batches = await sql`SELECT id, template_name, quantity, site_url, created_at FROM frame_batches ORDER BY created_at DESC LIMIT 100`;
-        return res.status(200).json({ batches, templates, codeLength: 6, siteUrl: process.env.PUBLIC_SITE_URL || '' });
+        return res.status(200).json({ batches, templates, codeLength: 6, siteUrl: configuredSiteUrl() });
     }
     if (req.method === 'POST') {
         let input;

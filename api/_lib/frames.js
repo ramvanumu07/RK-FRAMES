@@ -30,13 +30,17 @@ function siteUrl(value) {
     return url.origin;
 }
 
-function batchInput(body, configuredOrigin = process.env.PUBLIC_SITE_URL) {
+function configuredSiteUrl() {
+    return process.env.PUBLIC_SITE_URL?.trim() || process.env.RENDER_EXTERNAL_URL?.trim() || '';
+}
+
+function batchInput(body, configuredOrigin = configuredSiteUrl()) {
     const template = templates.find((item) => item.id === body?.templateId);
     const quantity = Number(body?.quantity);
     if (!template || !Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
         throw new Error('Choose a template and a quantity between 1 and 100');
     }
-    if (!configuredOrigin) throw new Error('PUBLIC_SITE_URL must be configured on the server before generating frames');
+    if (!configuredOrigin) throw new Error('Set PUBLIC_SITE_URL to your public HTTPS website address in the hosting environment, then save and redeploy.');
     const origin = siteUrl(configuredOrigin);
     return { template, quantity, origin };
 }
@@ -78,4 +82,4 @@ async function exportBatch(batch, gifts, { stream = false, onFrame = () => {} } 
     return zip.generateAsync({ type: 'nodebuffer', compression: 'STORE' });
 }
 
-module.exports = { templates, batchInput, renderFrame, exportBatch };
+module.exports = { templates, batchInput, renderFrame, exportBatch, configuredSiteUrl };

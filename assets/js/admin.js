@@ -272,7 +272,7 @@ async function loadBatches() {
             for (const template of frameTemplates) select.add(new Option(template.name, template.id));
             updateTemplate();
         }
-        document.getElementById('batch-destination').textContent = result.siteUrl ? `Destination: ${result.siteUrl}${/localhost|127\.0\.0\.1/.test(result.siteUrl) ? ' (local testing only)' : ''}` : 'PUBLIC_SITE_URL is not configured on the server.';
+        document.getElementById('batch-destination').textContent = result.siteUrl ? `Destination: ${result.siteUrl}${/localhost|127\.0\.0\.1/.test(result.siteUrl) ? ' (local testing only)' : ''}` : 'Set PUBLIC_SITE_URL in your hosting environment and redeploy.';
         document.getElementById('code-settings').textContent = `${result.codeLength}-character codes / created on demand`;
         const tbody = document.getElementById('batches-table-body');
         tbody.replaceChildren();

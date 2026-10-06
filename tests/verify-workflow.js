@@ -60,8 +60,66 @@ async function verifyLanding(browser) {
     console.log('PASS: landing page at five viewport sizes, loaded images, WhatsApp-only actions, and preserved gift/admin routes');
 }
 
+async function verifyGiftEdit(browser) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await context.addInitScript(() => {
+        HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.querySelector('video');
+            video.addEventListener('play', () => video.pause(), { once: true });
+            video.pause();
+        });
+    });
+    let signedIn = false;
+    let saved = false;
+    const gift = { found: true, filled: true, groomName: 'Original Groom', brideName: 'Original Bride', weddingDate: '2021-11-05' };
+    await page.route('**/api/gift?code=EDIT42', (route) => route.fulfill({ json: { ...gift, canManage: signedIn } }));
+    await page.route('**/api/admin/login', (route) => { signedIn = true; return route.fulfill({ json: { role: 'staff' } }); });
+    await page.route('**/api/gift-fill', (route) => {
+        assert.equal(route.request().method(), 'PUT');
+        assert.deepEqual(route.request().postDataJSON(), { code: 'EDIT42', groomName: 'Updated Groom', brideName: 'Updated Bride', weddingDate: '2022-12-25' });
+        saved = true;
+        return route.fulfill({ json: { success: true, groomName: 'Updated Groom', brideName: 'Updated Bride', weddingDate: '2022-12-25' } });
+    });
+    await page.goto(`${origin}/g/EDIT42/edit`);
+    await expect(page.locator('#staff-login-form')).toBeVisible();
+    await expect(page.locator('#screen-fill')).not.toHaveClass(/fade-in/);
+    await page.locator('#staff-email').fill('editor@example.com');
+    await page.locator('#staff-password').fill('mock-test-password');
+    await page.locator('#staff-login-form button').click();
+    await expect(page.locator('#screen-fill')).toHaveClass(/fade-in/);
+    await expect(page.locator('#fill-groom-name')).toHaveValue(gift.groomName);
+    await expect(page.locator('#fill-bride-name')).toHaveValue(gift.brideName);
+    await expect(page.locator('#fill-wedding-date')).toHaveValue(gift.weddingDate);
+    await expect.poll(() => page.locator('#screen-fill').evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+    await expect.poll(() => page.locator('#screen-access').evaluate((element) => getComputedStyle(element).opacity)).toBe('0');
+    await noOverflow(page);
+    await page.screenshot({ path: path.join(output, 'gift-edit-mobile.png') });
+    await page.locator('#fill-groom-name').fill('Updated Groom');
+    await page.locator('#fill-bride-name').fill('Updated Bride');
+    await page.locator('#fill-wedding-date').fill('2022-12-25');
+    await page.locator('#fill-form button').click();
+    await expect(page).toHaveURL(`${origin}/g/EDIT42`);
+    await expect(page.locator('#groom-name')).toHaveText('UPDATED GROOM');
+    assert.equal(saved, true);
+    for (const url of ['/g/EDIT42/edit/', '/edit?code=EDIT42']) {
+        const response = await context.request.get(`${origin}${url}`);
+        assert.equal(response.status(), 200);
+        assert.match(await response.text(), /fill-groom-name/);
+    }
+    await context.close();
+    console.log('PASS: /edit requires sign-in, prefills all three values, submits corrections, and returns to the gift URL (mocked APIs; no database changes)');
+}
+
 async function main() {
     fs.mkdirSync(output, { recursive: true });
+    if (process.argv.includes('--edit-only')) {
+        const browser = await chromium.launch({ headless: true });
+        try { await verifyGiftEdit(browser); }
+        finally { await browser.close(); }
+        return;
+    }
     if (process.argv.includes('--landing-only')) {
         const browser = await chromium.launch({ headless: true });
         try { await verifyLanding(browser); }

@@ -6,11 +6,11 @@ The public home page at `/` presents wedding and anniversary gifts for couples a
 
 ## Roles and flow
 
-1. **Admin:** signs in at `/admin`, selects an approved template and quantity, then creates and downloads a batch. The destination comes exclusively from `PUBLIC_SITE_URL` on the server.
+1. **Admin:** signs in at `/admin`, selects an approved template and quantity, then creates and downloads a batch. The destination comes from `PUBLIC_SITE_URL`, falling back to Render's automatically supplied `RENDER_EXTERNAL_URL` when the explicit setting is missing.
 2. **Export:** each batch creates exactly the requested number of gift rows on demand, each with a unique cryptographically generated 6-character code. A database uniqueness constraint and collision retries prevent duplicates; records and batch settings are inserted atomically. Retrying the same request key does not create more rows. Its ZIP contains `1.png` through `N.png`, each linking to `/g/<code>`.
 3. **Shop owner:** uses a staff account created by the admin, scans an empty frame, signs in, and saves the groom's name, bride's name, and wedding date.
 4. **Customer:** scans the same QR and immediately enjoys the personalized welcome video and journey statistics. No login or activation code is required.
-5. **Corrections:** authenticated staff can open the gift's Manage link or edit it from the dashboard. Visitors cannot change details. Unpersonalized gifts show a pending state to visitors.
+5. **Corrections:** authenticated staff append `/edit` to a gift link, such as `/g/ABC234/edit`, to update the groom's name, bride's name, and wedding date. The form is prefilled and saving returns to the regular gift URL. Visitors must sign in before editing. The dashboard editor and legacy `?manage=1` links also remain supported.
 
 Staff accounts share gift inventory; separate per-shop inventory ownership is not implemented.
 
@@ -54,11 +54,14 @@ The default server is `http://localhost:8000`; admin login is at `/admin`. Set `
 | `DATABASE_URL` | Neon database connection string |
 | `JWT_SECRET` | Long random secret signing staff/admin sessions |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Initial admin seed; existing accounts are not overwritten |
-| `PUBLIC_SITE_URL` | Required public origin for new batches, such as `https://gifts.your-domain.com`; restart the server after changing it |
+| `PUBLIC_SITE_URL` | Preferred public origin for new batches, such as `https://gifts.your-domain.com`; restart/redeploy after changing it |
+| `RENDER_EXTERNAL_URL` | Render's built-in HTTPS origin, used when `PUBLIC_SITE_URL` is missing or blank |
 | `PORT` | Server port, default 8000 |
 | `NODE_ENV` | Set to `production` behind HTTPS for secure cookies |
 
 `CREATION_CODE` is no longer used. Staff authentication replaces buyer activation codes.
+
+On Render, use **Environment > Add Environment Variable** to set `PUBLIC_SITE_URL` to the service's actual HTTPS origin, then choose **Save and deploy**. Do not copy `http://localhost:8010` into production. The local environment file is gitignored and not deployed. If neither origin setting is available, generation fails before creating any records; request headers and browser-supplied URLs are never used as the QR destination. Existing batches retain their previously saved URLs.
 
 ## Templates and printing
 
