@@ -87,6 +87,19 @@ async function main() {
         assert.equal((await admin.request.get(`${origin}/.env`)).status(), 403);
         assert.equal((await admin.request.get(`${origin}/api/_lib/db.js`)).status(), 403);
         assert.equal((await admin.request.get(`${origin}/backups/verification/frames.zip`)).status(), 403);
+        assert.equal((await admin.request.get(`${origin}/assets/source/screen2.png`)).status(), 404);
+        assert.equal((await admin.request.get(`${origin}/tests/workflow.test.js`)).status(), 404);
+        const stylesheet = await admin.request.get(`${origin}/assets/styles/styles.css`);
+        assert.equal(stylesheet.status(), 200);
+        const legacyStylesheet = await admin.request.get(`${origin}/styles.css`);
+        assert.equal(legacyStylesheet.status(), 200);
+        assert.equal(await legacyStylesheet.text(), await stylesheet.text());
+        const image = await admin.request.get(`${origin}/assets/images/screen2.webp`);
+        assert.equal(image.status(), 200);
+        assert.equal((await admin.request.get(`${origin}/screen2.webp`)).status(), 200);
+        const video = await admin.request.get(`${origin}/assets/videos/Krishna_and_Radha_meeting_1080p_20260912151343.mp4`, { headers: { Range: 'bytes=0-1023' } });
+        assert.equal(video.status(), 206);
+        assert.equal((await video.body()).length, 1024);
         assert.equal((await admin.request.post(`${origin}/api/admin/batches`, { data: { ...payload, quantity: 101 } })).status(), 400);
         assert.equal((await admin.request.delete(`${origin}/api/admin/gift?id=${gifts[0].id}`)).status(), 409);
         const newStaff = await admin.request.post(`${origin}/api/admin/users`, { data: { email: staffEmail, password: staffPassword, role: 'staff' } });
@@ -138,7 +151,7 @@ async function main() {
         assert.equal(publicGift.canManage, false);
         await expect(guestPage.locator('#screen-fill')).not.toHaveClass(/fade-in/);
         await expect(guestPage.locator('#manage-gift-link, #journey-button, .petals')).toHaveCount(0);
-        await expect(guestPage.locator('#welcome-video source')).toHaveAttribute('src', 'Krishna_and_Radha_meeting_1080p_20260912151343.mp4');
+        await expect(guestPage.locator('#welcome-video source')).toHaveAttribute('src', 'assets/videos/Krishna_and_Radha_meeting_1080p_20260912151343.mp4');
         await noOverflow(guestPage);
         await guestPage.screenshot({ path: path.join(output, 'gift-mobile.png') });
         await guestPage.setViewportSize({ width: 1440, height: 1000 });
@@ -146,7 +159,7 @@ async function main() {
         await guestPage.screenshot({ path: path.join(output, 'gift-desktop.png') });
         await guestPage.locator('#welcome-video').evaluate((video) => video.dispatchEvent(new Event('ended')));
         await expect(guestPage.locator('#screen-2')).toHaveClass(/fade-in/);
-        await expect(guestPage.locator('.journey-bg')).toHaveAttribute('src', 'screen2.webp');
+        await expect(guestPage.locator('.journey-bg')).toHaveAttribute('src', 'assets/images/screen2.webp');
         assert.ok(await guestPage.locator('.journey-bg').evaluate((image) => image.complete && image.naturalWidth > 0));
         assert.ok(Number((await guestPage.locator('#stat-days').textContent()).replace(/,/g, '')) > 0);
         const beats = await guestPage.locator('#stat-heartbeats').textContent();

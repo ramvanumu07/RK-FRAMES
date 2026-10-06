@@ -11,13 +11,12 @@
 const sharp = require('sharp');
 const path = require('path');
 
-const IMAGES = ['screen2.png', 'gate-bg.png'];
+const IMAGES = ['screen2.png'];
 
 async function main() {
     for (const file of IMAGES) {
-        const input = path.join(__dirname, '..', file);
-        const output = input.replace(/\.png$/, '.webp');
-        const before = (await sharp(input).metadata()).size || 0;
+        const input = path.join(__dirname, '..', 'assets', 'source', file);
+        const output = path.join(__dirname, '..', 'assets', 'images', file.replace(/\.png$/, '.webp'));
         await sharp(input)
             .webp({ quality: 85 })
             .toFile(output);

@@ -7,7 +7,7 @@ const vm = require('vm');
 const sharp = require('sharp');
 const jsQR = require('jsqr');
 const JSZip = require('jszip');
-const { templates, batchInput, exportBatch } = require('../api/_lib/frames');
+const { templates, batchInput, exportBatch, renderFrame } = require('../api/_lib/frames');
 const { giftData } = require('../api/_lib/gift-data');
 const { generateCodes } = require('../api/_lib/codes');
 
@@ -23,11 +23,17 @@ test('new codes are unique, cryptographically generated, and limited to 4-6 char
 
 test('original customer gift class, screen markup, CSS, and media references are preserved', () => {
     const root = path.join(__dirname, '..');
-    const original = (name) => execFileSync('git', ['show', `HEAD:${name}`], { cwd: root, encoding: 'utf8' }).replace(/\r\n/g, '\n');
-    const current = (name) => fs.readFileSync(path.join(root, name), 'utf8').replace(/\r\n/g, '\n');
+    const moved = { 'styles.css': 'assets/styles/styles.css', 'script.js': 'assets/js/script.js' };
+    const original = (name) => {
+        const relocated = moved[name] || name;
+        const exists = execFileSync('git', ['ls-tree', '--name-only', 'HEAD', '--', relocated], { cwd: root, encoding: 'utf8' }).trim();
+        return execFileSync('git', ['show', `HEAD:${exists ? relocated : name}`], { cwd: root, encoding: 'utf8' }).replace(/\r\n/g, '\n');
+    };
+    const current = (name) => fs.readFileSync(path.join(root, moved[name] || name), 'utf8').replace(/\r\n/g, '\n');
     const giftClass = (text) => text.slice(text.indexOf('class WeddingGiftExperience'), text.indexOf('class AccessGate')).trim();
     const screens = (text) => text.slice(text.indexOf('    <!-- SCREEN 1:'), text.indexOf('    <script src='));
     const normalizeStartup = (text) => text
+        .replace(/assets\/(?:images|videos)\//g, '')
         .replace(/ autoplay| preload="auto"/g, '')
         .replace(/(id="(?:groom-name|bride-name|wedding-date|journey-groom-name|journey-bride-name|journey-date-month|journey-date-day-year)"[^>]*>)[^<]*/g, '$1');
     assert.equal(current('styles.css'), original('styles.css'));
@@ -43,7 +49,7 @@ test('QR lookup needs no manual gift-code form and handles missing, invalid, and
     assert.doesNotMatch(html, /id="(?:access-form|access-code-input)"|Open My Gift|gate-bg\.webp/);
     assert.doesNotMatch(html, /<h1[^>]*>A Gift for You<\/h1>|>Opening your gift\.\.\.</);
     assert.match(html, /id="screen-access"[^>]*style="display: none"/);
-    const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+    const script = fs.readFileSync(path.join(root, 'assets/js/script.js'), 'utf8');
     const gateScript = script.slice(script.indexOf('class AccessGate'), script.indexOf("document.addEventListener('DOMContentLoaded'"));
     async function resolve(pathname, search, data, ok = true) {
         const elements = {};
@@ -182,6 +188,9 @@ test('exports preserve native artwork pixels in compact numbered PNGs with decod
         assert.equal(jsQR(new Uint8ClampedArray(data), info.width, info.height)?.data, gift.public_url);
     }
     assert.equal(images[0].equals(images[1]), false);
+    const legacy = { ...input.template, artwork: path.basename(input.template.artwork) };
+    const legacyFrame = await renderFrame(legacy, gifts[0].public_url);
+    assert.ok(legacyFrame.equals(images[0]), 'Saved batches with the original artwork path must render identically');
     await assert.rejects(() => exportBatch(batch, gifts.slice(0, 1)), /incomplete/);
 });
 

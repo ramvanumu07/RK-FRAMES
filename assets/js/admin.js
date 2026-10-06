@@ -297,7 +297,7 @@ async function loadBatches() {
 
 function updateTemplate() {
     const template = frameTemplates.find((item) => item.id === document.getElementById('batch-template').value);
-    if (template) document.getElementById('template-preview').src = `/${encodeURIComponent(template.artwork)}`;
+    if (template) document.getElementById('template-preview').src = new URL(template.artwork, `${location.origin}/`).href;
 }
 
 async function downloadBatch(id) {

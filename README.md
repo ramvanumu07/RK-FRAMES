@@ -12,6 +12,27 @@ Radha-Krishna print frames with unique QR-linked wedding gifts, backed by Neon P
 
 Staff accounts share gift inventory; separate per-shop inventory ownership is not implemented.
 
+## Project Structure
+
+```text
+RK/
+	index.html, admin.html     Page entry points
+	assets/
+		images/                 Frame template and journey artwork
+		videos/                 Original welcome video
+		styles/                 Gift and admin stylesheets
+		js/                     Browser application scripts
+		source/                 Original PNG used to regenerate journey WebP
+	api/                      Database, authentication, and frame endpoints
+	scripts/                  Migration, backup, and maintenance tools
+	tests/                    Unit and browser workflow checks
+	backups/                  Private local backups and verification artifacts (ignored)
+	dev-server.js             Local/production Node server
+	package.json              Dependencies and commands
+```
+
+Public assets live under `/assets/`; source artwork, scripts, tests, and backups are not served. Legacy public asset URLs and saved batch artwork paths remain compatible. Generated previews belong in `backups/verification/`, not the project root. The move does not change asset bytes, gift layout, or QR coordinates.
+
 ## Setup
 
 ```bash

@@ -112,8 +112,20 @@ function serveStatic(req, res, pathname) {
     }
     if (/^\/g\/[A-Z0-9]{4,64}$/i.test(pathname)) pathname = '/index.html';
     if (pathname === '/admin') pathname = '/admin.html';
-    const publicScripts = ['/admin.js', '/script.js', '/utils.js', '/styles.css', '/admin.css'];
-    if (!isVendor && pathname !== '/' && !['/index.html', '/admin.html', ...publicScripts].includes(pathname) && !/^\/[^/\\]+\.(?:png|webp|mp4|webm|ico)$/i.test(pathname)) {
+    const legacyAssets = {
+        '/admin.js': '/assets/js/admin.js',
+        '/script.js': '/assets/js/script.js',
+        '/utils.js': '/assets/js/utils.js',
+        '/styles.css': '/assets/styles/styles.css',
+        '/admin.css': '/assets/styles/admin.css',
+        '/screen2.webp': '/assets/images/screen2.webp',
+        '/Cosmic Radha Krishna with Heart QR Frame.png': '/assets/images/Cosmic Radha Krishna with Heart QR Frame.png',
+        '/Krishna_and_Radha_meeting_1080p_20260912151343.mp4': '/assets/videos/Krishna_and_Radha_meeting_1080p_20260912151343.mp4',
+    };
+    pathname = legacyAssets[pathname] || pathname;
+    const publicScripts = ['/assets/js/admin.js', '/assets/js/script.js', '/assets/js/utils.js', '/assets/styles/styles.css', '/assets/styles/admin.css'];
+    const publicMedia = /^\/assets\/(?:images\/[^/\\]+\.(?:png|webp|jpg|jpeg|gif|ico)|videos\/[^/\\]+\.(?:mp4|webm))$/i.test(pathname);
+    if (!isVendor && pathname !== '/' && !['/index.html', '/admin.html', ...publicScripts].includes(pathname) && !publicMedia) {
         res.writeHead(404); res.end('Not found'); return;
     }
     let filePath = path.join(ROOT, pathname === '/' ? '/index.html' : pathname);

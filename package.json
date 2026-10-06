@@ -7,8 +7,8 @@
     "start": "node dev-server.js",
     "dev": "node dev-server.js",
     "migrate": "node scripts/migrate.js",
-    "test": "node --test scripts/workflow.test.js",
-    "verify": "node scripts/verify-workflow.js",
+    "test": "node --test tests/workflow.test.js",
+    "verify": "node tests/verify-workflow.js",
     "backup": "node scripts/backup-db.js"
   },
   "keywords": [],
@@ -26,7 +26,6 @@
     "sharp": "^0.35.5"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
-    "ffmpeg-static": "^5.3.0"
+    "@playwright/test": "^1.63.0"
   }
 }

@@ -7,11 +7,17 @@ const { Readable } = require('stream');
 
 const templates = [{
     id: 'cosmic-heart-v3', name: 'Cosmic Radha Krishna',
-    artwork: 'Cosmic Radha Krishna with Heart QR Frame.png',
+    artwork: 'assets/images/Cosmic Radha Krishna with Heart QR Frame.png',
     width: 1536, height: 1024, density: 72,
     centerX: 1278, centerY: 720, size: 110, sourceWidth: 1536,
     dark: '#C80000', light: '#FCEBC9', margin: 0,
 }];
+
+function artworkPath(artwork) {
+    const legacy = 'Cosmic Radha Krishna with Heart QR Frame.png';
+    const relative = artwork === legacy ? `assets/images/${legacy}` : artwork;
+    return path.join(__dirname, '../..', relative);
+}
 
 function siteUrl(value) {
     const url = new URL(value);
@@ -44,7 +50,7 @@ async function renderFrame(template, url, background) {
         width: size, margin: template.margin, errorCorrectionLevel: 'M',
         color: { dark: template.dark, light: template.light },
     });
-    const base = background || await sharp(path.join(__dirname, '../..', template.artwork))
+    const base = background || await sharp(artworkPath(template.artwork))
         .resize(template.width, template.height).png().toBuffer();
     const frame = await sharp(base).composite([{ input: qr, left, top }])
         .withMetadata({ density: template.density }).png({ compressionLevel: 9, adaptiveFiltering: true, palette: false }).toBuffer();
@@ -58,7 +64,7 @@ async function renderFrame(template, url, background) {
 async function exportBatch(batch, gifts, { stream = false, onFrame = () => {} } = {}) {
     if (gifts.length !== batch.quantity) throw new Error('This batch is incomplete; export stopped.');
     const template = batch.template_config;
-    const background = await sharp(path.join(__dirname, '../..', template.artwork))
+    const background = await sharp(artworkPath(template.artwork))
         .resize(template.width, template.height).png().toBuffer();
     const zip = new JSZip();
     const folder = zip.folder(`frames-${batch.id}`);
