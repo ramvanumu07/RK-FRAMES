@@ -176,11 +176,9 @@ class AccessGate {
         const code = route?.[1] || new URLSearchParams(location.search).get('code');
         this.pendingCode = (code || '').trim().toUpperCase();
         this.pendingFilled = false;
-        this.staffForm = document.getElementById('staff-login-form');
         this.managing = Boolean(route?.[2]) || /^\/edit\/?$/i.test(location.pathname) || new URLSearchParams(location.search).get('manage') === '1';
 
         this.fillForm.addEventListener('submit', (e) => this.handleFillSubmit(e));
-        this.staffForm.addEventListener('submit', (event) => this.handleStaffLogin(event));
         this.resolveGift();
     }
 
@@ -213,42 +211,18 @@ class AccessGate {
                 this.screenAccess.style.display = 'none';
                 this.screenAccess.classList.add('fade-out');
                 new WeddingGiftExperience(data);
-            } else if (data.canManage) {
+            } else {
                 document.getElementById('fill-groom-name').value = data.groomName || '';
                 document.getElementById('fill-bride-name').value = data.brideName || '';
                 document.getElementById('fill-wedding-date').value = data.weddingDate || '';
                 this.screenAccess.classList.add('fade-out');
+                this.screenAccess.style.display = 'none';
                 this.screenFill.classList.add('fade-in');
-            } else {
-                this.accessError.textContent = this.managing ? 'Shop owner sign-in is required to edit this gift.' : 'This gift is being prepared.';
-                this.screenAccess.style.display = 'flex';
-                this.staffForm.style.display = 'flex';
             }
         } catch (err) {
             console.error(err);
             this.accessError.textContent = 'Something went wrong. Please try again.';
             this.screenAccess.style.display = 'flex';
-        }
-    }
-
-    async handleStaffLogin(event) {
-        event.preventDefault();
-        this.setBusy(this.staffForm, true);
-        this.accessError.textContent = '';
-        try {
-            const response = await fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: document.getElementById('staff-email').value.trim(), password: document.getElementById('staff-password').value }),
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Sign-in failed');
-            this.staffForm.reset();
-            await this.resolveGift();
-        } catch (error) {
-            this.accessError.textContent = error.message;
-        } finally {
-            this.setBusy(this.staffForm, false);
         }
     }
 

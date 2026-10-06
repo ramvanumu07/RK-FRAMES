@@ -8,9 +8,9 @@ The public home page at `/` presents wedding and anniversary gifts for couples a
 
 1. **Admin:** signs in at `/admin`, selects an approved template and quantity, then creates and downloads a batch. The destination comes from `PUBLIC_SITE_URL`, falling back to Render's automatically supplied `RENDER_EXTERNAL_URL` when the explicit setting is missing.
 2. **Export:** each batch creates exactly the requested number of gift rows on demand, each with a unique cryptographically generated 6-character code. A database uniqueness constraint and collision retries prevent duplicates; records and batch settings are inserted atomically. Retrying the same request key does not create more rows. Its ZIP contains `1.png` through `N.png`, each linking to `/g/<code>`.
-3. **Shop owner:** uses a staff account created by the admin, scans an empty frame, signs in, and saves the groom's name, bride's name, and wedding date.
+3. **Shop owner:** scans an empty frame and directly saves the groom's name, bride's name, and wedding date. No account or sign-in is required for gift setup.
 4. **Customer:** scans the same QR and immediately enjoys the personalized welcome video and journey statistics. No login or activation code is required.
-5. **Corrections:** authenticated staff append `/edit` to a gift link, such as `/g/ABC234/edit`, to update the groom's name, bride's name, and wedding date. The form is prefilled and saving returns to the regular gift URL. Visitors must sign in before editing. The dashboard editor and legacy `?manage=1` links also remain supported.
+5. **Corrections:** append `/edit` to a gift link, such as `/g/ABC234/edit`, to update the groom's name, bride's name, and wedding date without sign-in. The form is prefilled and saving returns to the regular gift URL. The protected dashboard editor and legacy `?manage=1` links remain supported.
 
 Staff accounts share gift inventory; separate per-shop inventory ownership is not implemented.
 
@@ -59,7 +59,7 @@ The default server is `http://localhost:8000`; admin login is at `/admin`. Set `
 | `PORT` | Server port, default 8000 |
 | `NODE_ENV` | Set to `production` behind HTTPS for secure cookies |
 
-`CREATION_CODE` is no longer used. Staff authentication replaces buyer activation codes.
+`CREATION_CODE` is no longer used. Authentication is required only for the admin/staff dashboard, not gift setup or `/edit`.
 
 On Render, use **Environment > Add Environment Variable** to set `PUBLIC_SITE_URL` to the service's actual HTTPS origin, then choose **Save and deploy**. Do not copy `http://localhost:8010` into production. The local environment file is gitignored and not deployed. If neither origin setting is available, generation fails before creating any records; request headers and browser-supplied URLs are never used as the QR destination. Existing batches retain their previously saved URLs.
 
@@ -96,6 +96,8 @@ npm run verify:landing
 
 `npm run verify:landing` checks the home page at five viewport sizes, WhatsApp link behavior, and preserved gift/admin routes, without account credentials or database mutations. Its screenshots are saved privately under `backups/verification/`.
 
-Codes default to 6 characters, and the shared generator supports lengths from 4 to 6. Short codes are guessable and should not be treated as private secrets. Public viewers have read-only access; anyone with a QR link or a guessed code can view that gift, so avoid sensitive personal information. Staff sessions use HttpOnly cookies, mutation requests reject cross-site origins, sign-in attempts are throttled, and private files are not served by the Node server. The login throttle is process-local; add shared rate limiting when scaling beyond one server.
+Codes default to 6 characters, and the shared generator supports lengths from 4 to 6. Short codes are guessable and should not be treated as private secrets. Gift setup and `/edit` are deliberately public at the user's request: anyone with a QR link or a guessed code can view and change that gift's details. Gift-edit authentication is deferred; avoid sensitive personal information. The admin dashboard, batch generation/downloads, and account management still require authenticated sessions using HttpOnly cookies. Mutation requests reject cross-site origins, admin sign-in attempts are throttled, and private files are not served by the Node server. The login throttle is process-local; add shared rate limiting when scaling beyond one server.
+
+`node tests/verify-workflow.js --edit-only` checks public setup and editing with mocked gift APIs, no login credentials, and no database changes. It also confirms that anonymous admin API requests are rejected.
 
 Rotate any credentials exposed outside your secrets store before public deployment. Keep database backups outside version control and protect them: they include password hashes and gift details.

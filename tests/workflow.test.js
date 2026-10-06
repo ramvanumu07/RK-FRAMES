@@ -47,13 +47,14 @@ test('QR lookup needs no manual gift-code form and handles missing, invalid, and
     const root = path.join(__dirname, '..');
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     assert.doesNotMatch(html, /id="(?:access-form|access-code-input)"|Open My Gift|gate-bg\.webp/);
+    assert.doesNotMatch(html, /staff-login-form|staff-email|staff-password|Shop Owner Sign In/);
     assert.doesNotMatch(html, /<h1[^>]*>A Gift for You<\/h1>|>Opening your gift\.\.\.</);
     assert.match(html, /id="screen-access"[^>]*style="display: none"/);
     const script = fs.readFileSync(path.join(root, 'assets/js/script.js'), 'utf8');
     const gateScript = script.slice(script.indexOf('class AccessGate'), script.indexOf("document.addEventListener('DOMContentLoaded'"));
     async function resolve(pathname, search, data, ok = true) {
         const elements = {};
-        for (const id of ['screen-access', 'screen-fill', 'access-error', 'fill-form', 'fill-error', 'staff-login-form', 'fill-groom-name', 'fill-bride-name', 'fill-wedding-date']) {
+        for (const id of ['screen-access', 'screen-fill', 'access-error', 'fill-form', 'fill-error', 'fill-groom-name', 'fill-bride-name', 'fill-wedding-date']) {
             elements[id] = { classList: new Set(), style: {}, addEventListener() {} };
         }
         const calls = [];
@@ -82,9 +83,8 @@ test('QR lookup needs no manual gift-code form and handles missing, invalid, and
     const invalid = await resolve('/g/WXYZ', '', { found: false }, false);
     assert.equal(invalid.elements['access-error'].textContent, 'This gift could not be found.');
     const pending = await resolve('/g/ABCD', '', { found: true, filled: false, canManage: false });
-    assert.equal(pending.elements['access-error'].textContent, 'This gift is being prepared.');
-    assert.equal(pending.elements['screen-access'].style.display, 'flex');
-    assert.equal(pending.elements['staff-login-form'].style.display, 'flex');
+    assert.ok(pending.elements['screen-fill'].classList.has('fade-in'));
+    assert.equal(pending.elements['screen-access'].style.display, 'none');
     const staff = await resolve('/g/ABCD', '', { found: true, filled: false, canManage: true });
     assert.ok(staff.elements['screen-fill'].classList.has('fade-in'));
     const legacyLink = await resolve('/', '?code=ABCD', gift);
@@ -98,7 +98,8 @@ test('QR lookup needs no manual gift-code form and handles missing, invalid, and
     assert.equal(edit.elements['fill-wedding-date'].value, gift.weddingDate);
     const visitorEdit = await resolve('/g/ABCD/edit', '', { ...gift, canManage: false });
     assert.equal(visitorEdit.opened, undefined);
-    assert.equal(visitorEdit.elements['staff-login-form'].style.display, 'flex');
+    assert.ok(visitorEdit.elements['screen-fill'].classList.has('fade-in'));
+    assert.equal(visitorEdit.elements['fill-groom-name'].value, gift.groomName);
     const editQuery = await resolve('/edit', '?code=ABCD', { ...gift, canManage: true });
     assert.ok(editQuery.elements['screen-fill'].classList.has('fade-in'));
 });
@@ -124,26 +125,22 @@ test('batch inputs enforce limits and use only the server-configured origin', ()
     }
 });
 
-test('only staff can activate; activation is atomic and explicit corrections are separate', async () => {
+test('public setup and editing need no authentication; activation stays atomic', async () => {
     const dbPath = path.resolve(__dirname, '../api/_lib/db.js');
     const authPath = path.resolve(__dirname, '../api/_lib/auth.js');
     const handlerPath = path.resolve(__dirname, '../api/gift-fill.js');
     const originalDb = require.cache[dbPath];
     const originalAuth = require.cache[authPath];
-    let allowed = false;
     let result = [{ id: 1 }];
     let query = '';
     let params = [];
     require.cache[dbPath] = { exports: { sql: async (strings, ...values) => { query = strings.join('?'); params = values; return result; } } };
-    require.cache[authPath] = { exports: { requireSession: (req, res) => allowed ? { role: 'staff' } : (res.status(401).json({}), null) } };
+    require.cache[authPath] = { exports: { requireSession: () => { throw new Error('Public gift saves must not request authentication'); } } };
     delete require.cache[handlerPath];
     try {
         const handler = require(handlerPath);
         const res = { status(code) { this.code = code; return this; }, json(data) { this.data = data; } };
         const req = { method: 'POST', body: { code: 'TEST', groomName: 'Groom', brideName: 'Bride', weddingDate: '2024-02-29' } };
-        await handler(req, res);
-        assert.equal(res.code, 401);
-        allowed = true;
         await handler(req, res);
         assert.equal(res.code, 200);
         assert.match(query, /filled_at IS NULL/);

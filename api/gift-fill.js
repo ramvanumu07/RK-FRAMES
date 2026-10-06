@@ -1,5 +1,4 @@
 const { sql } = require('./_lib/db');
-const { requireSession } = require('./_lib/auth');
 const { giftData } = require('./_lib/gift-data');
 
 module.exports = async (req, res) => {
@@ -8,7 +7,6 @@ module.exports = async (req, res) => {
         return;
     }
 
-    if (!requireSession(req, res)) return;
     let details;
     try { details = giftData(req.body); }
     catch (error) { return res.status(400).json({ error: error.message }); }

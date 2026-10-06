@@ -5,7 +5,6 @@
  * been personalized (filled) or still needs the setup form.
  */
 const { sql } = require('./_lib/db');
-const { getSession } = require('./_lib/auth');
 
 module.exports = async (req, res) => {
     if (req.method !== 'GET') {
@@ -36,7 +35,6 @@ module.exports = async (req, res) => {
     res.status(200).json({
         found: true,
         filled,
-        canManage: Boolean(getSession(req)),
         groomName: filled ? row.groom_name : undefined,
         brideName: filled ? row.bride_name : undefined,
         weddingDate: filled ? row.wedding_date : undefined,
