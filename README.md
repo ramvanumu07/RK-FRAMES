@@ -2,6 +2,8 @@
 
 Radha-Krishna print frames with unique QR-linked wedding gifts, backed by Neon PostgreSQL.
 
+The public home page at `/` presents wedding and anniversary gifts for couples and shop orders. Its only actions open WhatsApp at +91 8333027544; no setup, authentication, or production details are described there. `/g/<code>` and legacy `/?code=<code>` links continue to open the original digital gift, while `/admin` remains the staff dashboard.
+
 ## Roles and flow
 
 1. **Admin:** signs in at `/admin`, selects an approved template and quantity, then creates and downloads a batch. The destination comes exclusively from `PUBLIC_SITE_URL` on the server.
@@ -16,7 +18,8 @@ Staff accounts share gift inventory; separate per-shop inventory ownership is no
 
 ```text
 RK/
-	index.html, admin.html     Page entry points
+	home.html                 Public sales landing page
+	index.html, admin.html    Digital gift and staff page entry points
 	assets/
 		images/                 Frame template and journey artwork
 		videos/                 Original welcome video
@@ -81,11 +84,14 @@ Direct Vercel deployment is not configured: it would require gift-link rewrites,
 npm test
 npx playwright install chromium
 npm run verify
+npm run verify:landing
 ```
 
 `npm test` requires no database and checks 4-6-character code generation, calendar validation, permissions, atomic activation, environment-only URLs, batch limits, numbered ZIPs, QR decoding, native resolution, and unchanged artwork pixels. `npm run verify` requires the running server and Neon credentials; its default origin is `http://localhost:8010` (override with `VERIFY_ORIGIN`). It creates a temporary batch and verifies exactly the requested number of new rows with 6-character codes, even after retrying the same request. It checks native ZIP downloads, rendering-failure status, and staff/customer flows, then captures desktop/mobile screenshots under `backups/verification`. Cleanup deletes only its temporary gifts, batch, and staff account. If interrupted, identify the verification batch before deleting its temporary records.
 
 ## Security
+
+`npm run verify:landing` checks the home page at five viewport sizes, WhatsApp link behavior, and preserved gift/admin routes, without account credentials or database mutations. Its screenshots are saved privately under `backups/verification/`.
 
 Codes default to 6 characters, and the shared generator supports lengths from 4 to 6. Short codes are guessable and should not be treated as private secrets. Public viewers have read-only access; anyone with a QR link or a guessed code can view that gift, so avoid sensitive personal information. Staff sessions use HttpOnly cookies, mutation requests reject cross-site origins, sign-in attempts are throttled, and private files are not served by the Node server. The login throttle is process-local; add shared rate limiting when scaling beyond one server.
 

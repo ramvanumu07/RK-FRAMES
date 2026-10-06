@@ -16,8 +16,58 @@ async function noOverflow(page) {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Page must not overflow horizontally');
 }
 
+async function verifyLanding(browser) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    for (const [name, width, height] of [['desktop', 1440, 1000], ['mobile', 390, 844], ['small-mobile', 320, 640], ['wide', 1920, 1080], ['landscape', 844, 390]]) {
+        await page.setViewportSize({ width, height });
+        await page.goto(origin);
+        await page.evaluate(() => document.fonts.ready);
+        await expect(page.locator('h1')).toHaveText('Radha KrishnaWedding Gifts');
+        await expect(page.locator('form,input,button')).toHaveCount(0);
+        const links = await page.locator('a').evaluateAll((elements) => elements.map((element) => element.href));
+        assert.ok(links.every((url) => url.startsWith('https://wa.me/918333027544')));
+        await noOverflow(page);
+        assert.ok(await page.locator('.hero-art').evaluate((image) => image.complete && image.naturalWidth > 0));
+        const hero = await page.locator('.hero').boundingBox();
+        const copy = await page.locator('.hero-copy').boundingBox();
+        assert.ok(copy.y >= hero.y && copy.y + copy.height <= hero.y + hero.height, `Hero content must fit ${name}`);
+        assert.ok((await page.locator('.intro').boundingBox()).y < height, `Next section must peek into ${name}`);
+        await page.locator('.collection-image img').scrollIntoViewIfNeeded();
+        await page.locator('.collection-image img').evaluate((image) => image.decode());
+        await page.evaluate(() => scrollTo(0, 0));
+        await page.screenshot({ path: path.join(output, `home-${name}.png`), fullPage: true });
+        if (name === 'mobile') await page.screenshot({ path: path.join(output, 'home-mobile-first.png') });
+    }
+    await context.route('https://wa.me/**', (route) => route.fulfill({ contentType: 'text/html', body: 'WhatsApp destination verified' }));
+    const popupPromise = page.waitForEvent('popup');
+    await page.locator('.header-contact').click();
+    const popup = await popupPromise;
+    await popup.waitForLoadState();
+    assert.ok(popup.url().startsWith('https://wa.me/918333027544'));
+    await popup.close();
+    for (const url of ['/g/ABC234', '/?code=ABC234', '/index.html']) {
+        const response = await context.request.get(`${origin}${url}`);
+        assert.equal(response.status(), 200);
+        assert.match(await response.text(), /<video/);
+    }
+    const admin = await context.request.get(`${origin}/admin`);
+    assert.match(await admin.text(), /login-form/);
+    assert.deepEqual(errors, []);
+    await context.close();
+    console.log('PASS: landing page at five viewport sizes, loaded images, WhatsApp-only actions, and preserved gift/admin routes');
+}
+
 async function main() {
     fs.mkdirSync(output, { recursive: true });
+    if (process.argv.includes('--landing-only')) {
+        const browser = await chromium.launch({ headless: true });
+        try { await verifyLanding(browser); }
+        finally { await browser.close(); }
+        return;
+    }
     let batchId;
     let browser;
     const pageErrors = [];

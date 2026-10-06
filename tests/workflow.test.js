@@ -245,3 +245,13 @@ test('on-demand batches retry code collisions and return an existing batch for a
         if (originalOrigin === undefined) delete process.env.PUBLIC_SITE_URL; else process.env.PUBLIC_SITE_URL = originalOrigin;
     }
 });
+
+test('landing page contains only WhatsApp actions and no technical implementation details', () => {
+    const html = fs.readFileSync(path.join(__dirname, '..', 'home.html'), 'utf8');
+    const actions = [...html.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map((match) => match[1]);
+    assert.ok(actions.length > 0);
+    assert.ok(actions.every((url) => /^https:\/\/wa\.me\/918333027544(?:\?|$)/.test(url)));
+    assert.doesNotMatch(html, /<form\b|<input\b|<button\b|\/api\/|\/admin|database|Neon|QR code|access code|serverless/i);
+    assert.match(html, /gift shops &amp; resellers/i);
+    assert.match(html, /Radha Krishna/);
+});

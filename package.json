@@ -9,6 +9,7 @@
     "migrate": "node scripts/migrate.js",
     "test": "node --test tests/workflow.test.js",
     "verify": "node tests/verify-workflow.js",
+    "verify:landing": "node tests/verify-workflow.js --landing-only",
     "backup": "node scripts/backup-db.js"
   },
   "keywords": [],

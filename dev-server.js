@@ -123,12 +123,12 @@ function serveStatic(req, res, pathname) {
         '/Krishna_and_Radha_meeting_1080p_20260912151343.mp4': '/assets/videos/Krishna_and_Radha_meeting_1080p_20260912151343.mp4',
     };
     pathname = legacyAssets[pathname] || pathname;
-    const publicScripts = ['/assets/js/admin.js', '/assets/js/script.js', '/assets/js/utils.js', '/assets/styles/styles.css', '/assets/styles/admin.css'];
+    const publicScripts = ['/assets/js/admin.js', '/assets/js/script.js', '/assets/js/utils.js', '/assets/styles/styles.css', '/assets/styles/admin.css', '/assets/styles/home.css'];
     const publicMedia = /^\/assets\/(?:images\/[^/\\]+\.(?:png|webp|jpg|jpeg|gif|ico)|videos\/[^/\\]+\.(?:mp4|webm))$/i.test(pathname);
-    if (!isVendor && pathname !== '/' && !['/index.html', '/admin.html', ...publicScripts].includes(pathname) && !publicMedia) {
+    if (!isVendor && pathname !== '/' && !['/home.html', '/index.html', '/admin.html', ...publicScripts].includes(pathname) && !publicMedia) {
         res.writeHead(404); res.end('Not found'); return;
     }
-    let filePath = path.join(ROOT, pathname === '/' ? '/index.html' : pathname);
+    let filePath = path.join(ROOT, pathname === '/' ? '/home.html' : pathname);
     if (!filePath.startsWith(ROOT)) {
         res.writeHead(403);
         res.end('Forbidden');
@@ -178,7 +178,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    serveStatic(req, res, pathname);
+    serveStatic(req, res, pathname === '/' && url.searchParams.has('code') ? '/index.html' : pathname);
     } catch (error) {
         if (!res.headersSent) {
             res.writeHead(error.status || 500, { 'Content-Type': 'application/json' });
